@@ -5,6 +5,9 @@
 const db = new Dexie("SillaraDB");
 
 function stableStringify(value) {
+  if (value instanceof Date) {
+    return JSON.stringify(value.toISOString());
+  }
   if (value === null || typeof value !== "object") {
     return JSON.stringify(value);
   }
@@ -16,13 +19,43 @@ function stableStringify(value) {
 }
 
 function computeChecksum(payload) {
-  const source = stableStringify(payload);
+  // Normalize like exported JSON so checksum matches import payload exactly.
+  const normalized = JSON.parse(JSON.stringify(payload));
+  const source = stableStringify(normalized);
   let hash = 2166136261;
   for (let i = 0; i < source.length; i++) {
     hash ^= source.charCodeAt(i);
     hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
   }
   return `fnv32:${(hash >>> 0).toString(16)}`;
+}
+
+function transformForLegacyDateChecksum(value) {
+  if (Array.isArray(value)) {
+    return value.map(transformForLegacyDateChecksum);
+  }
+
+  if (value && typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value)) {
+      out[key] = transformForLegacyDateChecksum(value[key]);
+    }
+    return out;
+  }
+
+  if (typeof value === "string") {
+    const isoDateTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+    if (isoDateTime.test(value)) {
+      return {};
+    }
+  }
+
+  return value;
+}
+
+function computeLegacyDateChecksum(payload) {
+  const transformed = transformForLegacyDateChecksum(payload);
+  return computeChecksum(transformed);
 }
 
 // Define database schema
@@ -728,7 +761,7 @@ const DB = {
     const suppliers = await db.suppliers.toArray();
     const supplierLedger = await db.supplier_ledger.toArray();
     const categories = await db.categories.toArray();
-    const shopSettings = await db.shop_settings.get(1);
+    const shopSettings = (await db.shop_settings.get(1)) || null;
 
     const payload = {
       products,
@@ -759,7 +792,11 @@ const DB = {
         const { checksum, ...rest } = data;
         const actualChecksum = computeChecksum(rest);
         if (actualChecksum !== checksum) {
-          throw new Error('Backup checksum validation failed. File may be corrupted or modified.');
+          const legacyChecksum = computeLegacyDateChecksum(rest);
+          if (legacyChecksum !== checksum) {
+            throw new Error('Backup checksum validation failed. File may be corrupted or modified.');
+          }
+          console.warn('Imported using legacy checksum compatibility mode. Re-export backup to update checksum format.');
         }
       }
 

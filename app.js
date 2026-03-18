@@ -128,12 +128,31 @@ function summarizeBackupData(data) {
         sales: Array.isArray(data.sales) ? data.sales.length : 0,
         purchases: Array.isArray(data.purchases) ? data.purchases.length : 0,
         expenses: Array.isArray(data.expenses) ? data.expenses.length : 0,
-        returns: Array.isArray(data.returns) ? data.returns.length : 0
+        returns: Array.isArray(data.returns) ? data.returns.length : 0,
+        dayClosings: Array.isArray(data.dayClosings) ? data.dayClosings.length : 0,
+        customers: Array.isArray(data.customers) ? data.customers.length : 0,
+        suppliers: Array.isArray(data.suppliers) ? data.suppliers.length : 0
     };
 }
 
 function formatBackupSummary(summary) {
-    return `Products: ${summary.products}, Sales: ${summary.sales}, Purchases: ${summary.purchases}, Expenses: ${summary.expenses}, Returns: ${summary.returns}`;
+    return `Products: ${summary.products}, Sales: ${summary.sales}, Purchases: ${summary.purchases}, Expenses: ${summary.expenses}, Returns: ${summary.returns}, Day Closings: ${summary.dayClosings}, Customers: ${summary.customers}, Suppliers: ${summary.suppliers}`;
+}
+
+function validateBackupPayload(data) {
+    if (!data || typeof data !== 'object') {
+        throw new Error('Invalid backup file: not a JSON object.');
+    }
+
+    const requiredArrayKeys = ['products', 'sales', 'purchases', 'expenses', 'returns'];
+    for (const key of requiredArrayKeys) {
+        if (!(key in data)) {
+            throw new Error(`Invalid backup file: missing key "${key}".`);
+        }
+        if (!Array.isArray(data[key])) {
+            throw new Error(`Invalid backup file: "${key}" must be an array.`);
+        }
+    }
 }
 
 async function createAutoBackup(reason = 'auto') {
@@ -1255,19 +1274,23 @@ async function loadExpensesTable() {
         return;
     }
 
-    tbody.innerHTML = expenses.map(expense => `
+    tbody.innerHTML = expenses.map(expense => {
+        const amount = Number(expense.amount) || 0;
+        const amountClass = amount < 0 ? 'text-emerald-600' : 'text-red-600';
+        return `
         <tr class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">${formatDateForDisplay(expense.date)}</td>
             <td class="px-6 py-4 text-sm"><span class="badge badge-warning">${expense.category || 'Other'}</span></td>
             <td class="px-6 py-4 text-sm font-medium text-gray-900">${expense.description || ''}</td>
-            <td class="px-6 py-4 text-right text-sm font-bold text-red-600">Rs. ${(Number(expense.amount) || 0).toFixed(2)}</td>
+            <td class="px-6 py-4 text-right text-sm font-bold ${amountClass}">Rs. ${amount.toFixed(2)}</td>
             <td class="px-6 py-4 text-sm">
                 <button onclick="deleteExpense(${expense.id})" class="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-all">
                     <i class="ri-delete-bin-line"></i> Delete
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function deleteExpense(expenseId) {
@@ -2938,7 +2961,7 @@ async function generateReport() {
 
     // --- 2. INCOME STATEMENT ---
     const expenses = await DB.expenses.getByDateRange(fromDate, toDate);
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+    const totalExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const netProfit = grossProfit - totalExpenses;
 
     const grossSalesEl = document.getElementById('is-gross-sales');
@@ -3140,14 +3163,18 @@ async function generateReport() {
             expenseTableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">No expense entries for selected period</td></tr>';
         } else {
             const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
-            expenseTableBody.innerHTML = sortedExpenses.map((expense) => `
+            expenseTableBody.innerHTML = sortedExpenses.map((expense) => {
+                const amount = Number(expense.amount) || 0;
+                const amountClass = amount < 0 ? 'text-emerald-600' : 'text-red-600';
+                return `
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">${formatDateForDisplay(expense.date)}</td>
                     <td class="px-6 py-4 text-sm text-gray-700">${expense.category || 'Other'}</td>
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">${expense.description || ''}</td>
-                    <td class="px-6 py-4 text-right text-sm font-bold text-red-600">Rs. ${(Number(expense.amount) || 0).toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right text-sm font-bold ${amountClass}">Rs. ${amount.toFixed(2)}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
     }
 
@@ -4168,18 +4195,20 @@ async function exportData() {
     if (!requirePermission('data:export', 'Only owner/manager can export backup data.')) return;
     try {
         const data = await DB.exportAll();
+        const summary = summarizeBackupData(data);
         const dataStr = JSON.stringify(data, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
         
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `sillara-pos-backup-${new Date().toISOString().split('T')[0]}.json`;
+        const stamp = new Date().toISOString().replace(/[:]/g, '-').split('.')[0];
+        link.download = `sillara-pos-backup-${stamp}.json`;
         link.click();
         
         URL.revokeObjectURL(url);
         
-        alert('Data exported successfully!');
+        alert(`Data exported successfully!\n${formatBackupSummary(summary)}\n\nFile saved via your browser download location.`);
     } catch (error) {
         console.error('Export error:', error);
         alert('Error exporting data. Please try again.');
@@ -4198,22 +4227,45 @@ async function importData(input) {
     try {
         const text = await file.text();
         const data = JSON.parse(text);
+        validateBackupPayload(data);
 
         const summary = summarizeBackupData(data);
         const summaryText = formatBackupSummary(summary);
         const checksumState = data.checksum ? 'Checksum present' : 'Checksum not present (legacy backup)';
+        const versionText = data.version ? `Backup version: ${data.version}` : 'Backup version: unknown';
         
-        if (!confirm(`Backup Preview\n${summaryText}\n${checksumState}\n\nThis will replace all existing data. Continue?`)) {
+        if (!confirm(`Backup Preview\n${summaryText}\n${versionText}\n${checksumState}\n\nThis will replace all existing data. Continue?`)) {
             input.value = '';
             return;
         }
         
-        await DB.importAll(data);
+        try {
+            await DB.importAll(data);
+        } catch (importError) {
+            const message = String(importError?.message || importError || '');
+            const isChecksumError = message.toLowerCase().includes('checksum validation failed');
+            if (!isChecksumError) throw importError;
+
+            const force = confirm(
+                'Checksum validation failed.\n\nIf this file is from your own Export All Data, you can continue with Force Import.\nContinue with Force Import?'
+            );
+            if (!force) {
+                throw importError;
+            }
+
+            // Force import for trusted legacy/cross-version backup files.
+            const { checksum, ...payloadWithoutChecksum } = data;
+            await DB.importAll(payloadWithoutChecksum);
+        }
         await loadProducts();
         await loadCategories();
         await updateDashboard();
         await refreshLedgerSummaryCards();
         await loadLedgerTables();
+        await loadDayClosingRows();
+        await updateDayClosePreview();
+        if (currentPage === 'expenses') await loadExpensesTable();
+        if (currentPage === 'reports') await generateReport();
         
         alert('Data imported successfully!');
         
@@ -4221,7 +4273,7 @@ async function importData(input) {
         showPage(currentPage);
     } catch (error) {
         console.error('Import error:', error);
-        alert('Error importing data. Please check the file format.');
+        alert(`Error importing data: ${error?.message || 'Please check the file format.'}`);
     }
     
     input.value = '';
@@ -4433,6 +4485,7 @@ async function closeDay(event) {
 
     let approvedBy = '';
     let shortageExpenseId = null;
+    let varianceExpenseId = null;
 
     if (isShortage) {
         if (!confirm(`Cash shortage detected: Rs. ${Math.abs(variance).toFixed(2)}. Do you want to close the day?`)) {
@@ -4453,6 +4506,18 @@ async function closeDay(event) {
             description: `Day close shortage on ${dateKey}`,
             amount: Math.abs(variance)
         });
+        varianceExpenseId = shortageExpenseId;
+    }
+
+    if (status === 'excess') {
+        const confirmExcess = confirm(`Cash excess detected: Rs. ${Math.abs(variance).toFixed(2)}. Record as cash excess adjustment and close day?`);
+        if (!confirmExcess) return;
+        varianceExpenseId = await DB.expenses.add({
+            date: new Date(`${dateKey}T23:59:00`),
+            category: 'Cash Excess',
+            description: `Day close excess on ${dateKey}`,
+            amount: -Math.abs(variance)
+        });
     }
 
     await DB.day_closings.add({
@@ -4464,6 +4529,7 @@ async function closeDay(event) {
         status,
         approvedBy,
         shortageExpenseId,
+        varianceExpenseId,
         notes,
         closedBy: currentUser?.username || 'unknown'
     });
@@ -4472,6 +4538,8 @@ async function closeDay(event) {
     document.getElementById('day-close-notes').value = '';
     await updateDayClosePreview();
     await loadDayClosingRows();
+    if (currentPage === 'expenses') await loadExpensesTable();
+    if (currentPage === 'reports') await generateReport();
 }
 
 async function loadDayClosingRows() {

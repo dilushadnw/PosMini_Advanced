@@ -1,0 +1,2336 @@
+                                                                                                                                                                                                                                                                                                                <!doctype html>
+<html lang="si">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sillara-POS - සිල්ලර බඩු කඩය</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Remix Icons CDN -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+
+    <!-- Dexie.js CDN -->
+    <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link                                                                                                                                                                                                                                                 
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css" />
+
+    <script>                                                                          
+      // Tailwind Config
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: "#f0fdf4",
+                100: "#dcfce7",
+                200: "#bbf7d0",
+                300: "#86efac",
+                400: "#4ade80",
+                500: "#22c55e",
+                600: "#16a34a",
+                700: "#15803d",
+                800: "#166534",
+                900: "#14532d",
+              },
+              accent: {
+                50: "#fef2f2",
+                100: "#fee2e2",
+                200: "#fecaca",
+                300: "#fca5a5",
+                400: "#f87171",
+                500: "#ef4444",
+                600: "#dc2626",
+                700: "#b91c1c",
+                800: "#991b1b",
+                900: "#7f1d1d",
+              },
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              sinhala: ["Noto Sans Sinhala", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body class="bg-gradient-to-br from-gray-50 to-gray-100">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-3">
+            <div
+              class="bg-gradient-to-br from-primary-500 to-primary-700 p-2 rounded-xl shadow-lg"
+            >
+              <i class="ri-store-2-fill text-white text-2xl"></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-gray-800">Sillara-POS</h1>
+              <p class="text-xs text-gray-500 font-sinhala">සිල්ලර බඩු කඩය</p>
+            </div>
+          </div>
+
+          <!-- Navigation Menu -->
+          <div class="hidden md:flex space-x-2">
+            <button
+              onclick="showPage('dashboard')"
+              id="nav-dashboard"
+              class="nav-btn active"
+            >
+              <i class="ri-dashboard-3-line"></i>
+              <span>Dashboard</span>
+            </button>
+            <button onclick="showPage('pos')" id="nav-pos" class="nav-btn">
+              <i class="ri-shopping-cart-2-line"></i>
+              <span>POS</span>
+            </button>
+            <button
+              onclick="showPage('inventory')"
+              id="nav-inventory"
+              class="nav-btn"
+            >
+              <i class="ri-archive-line"></i>
+              <span>Stock</span>
+            </button>
+            <button
+              onclick="showPage('reports')"
+              id="nav-reports"
+              class="nav-btn"
+            >
+              <i class="ri-file-chart-line"></i>
+              <span>Reports</span>
+            </button>
+            <button
+              onclick="showPage('expenses')"
+              id="nav-expenses"
+              class="nav-btn"
+            >
+              <i class="ri-wallet-3-line"></i>
+              <span>Expenses</span>
+            </button>
+            <button
+              onclick="showPage('returns')"
+              id="nav-returns"
+              class="nav-btn"
+            >
+              <i class="ri-arrow-left-right-line"></i>
+              <span>Returns</span>
+            </button>
+            <button
+              onclick="showPage('parties')"
+              id="nav-parties"
+              class="nav-btn"
+            >
+              <i class="ri-team-line"></i>
+              <span>Parties</span>
+            </button>
+            <button
+              onclick="showPage('settings')"
+              id="nav-settings"
+              class="nav-btn"
+            >
+              <i class="ri-settings-3-line"></i>
+              <span>Settings</span>
+            </button>
+          </div>
+
+          <div class="hidden md:flex items-center ml-3 px-3 py-1.5 bg-gray-100 rounded-xl text-sm text-gray-700">
+            <i class="ri-user-3-line mr-2"></i>
+            <span id="current-user-display">Not logged in</span>
+            <button onclick="logout()" class="ml-3 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-lg">
+              Logout
+            </button>
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <button
+            class="md:hidden p-2 rounded-lg hover:bg-gray-100"
+            onclick="toggleMobileMenu()"
+          >
+            <i class="ri-menu-line text-2xl"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div id="mobile-menu" class="md:hidden hidden pb-4">
+          <div class="flex flex-col space-y-2">
+            <button
+              onclick="
+                showPage('dashboard');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-dashboard-3-line"></i>
+              <span>Dashboard</span>
+            </button>
+            <button
+              onclick="
+                showPage('pos');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-shopping-cart-2-line"></i>
+              <span>POS</span>
+            </button>
+            <button
+              onclick="
+                showPage('inventory');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-archive-line"></i>
+              <span>Stock</span>
+            </button>
+            <button
+              onclick="
+                showPage('reports');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-file-chart-line"></i>
+              <span>Reports</span>
+            </button>
+            <button
+              onclick="
+                showPage('expenses');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-wallet-3-line"></i>
+              <span>Expenses</span>
+            </button>
+            <button
+              onclick="
+                showPage('returns');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-arrow-left-right-line"></i>
+              <span>Returns</span>
+            </button>
+            <button
+              onclick="
+                showPage('parties');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-team-line"></i>
+              <span>Parties</span>
+            </button>
+            <button
+              onclick="
+                showPage('settings');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-settings-3-line"></i>
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <!-- Dashboard Page -->
+      <div id="page-dashboard" class="page-content">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900">Dashboard</h2>
+          <p class="text-gray-600 mt-1 font-sinhala">අද දවසේ විස්තර</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <!-- Today's Sales -->
+          <div
+            class="stat-card bg-gradient-to-br from-primary-500 to-primary-700 text-white"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-primary-100 text-sm font-medium">
+                  Today's Sales
+                </p>
+                <h3 class="text-3xl font-bold mt-2">
+                  Rs. <span id="today-sales">0.00</span>
+                </h3>
+                <p class="text-primary-100 text-xs mt-2 font-sinhala">
+                  අද විකුණුම්
+                </p>
+              </div>
+              <div class="bg-white/20 p-4 rounded-2xl">
+                <i class="ri-money-rupee-circle-line text-4xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Transactions -->
+          <div
+            class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 text-white"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-blue-100 text-sm font-medium">Transactions</p>
+                <h3 class="text-3xl font-bold mt-2">
+                  <span id="today-transactions">0</span>
+                </h3>
+                <p class="text-blue-100 text-xs mt-2 font-sinhala">බිල් ගණන</p>
+              </div>
+              <div class="bg-white/20 p-4 rounded-2xl">
+                <i class="ri-receipt-line text-4xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Products -->
+          <div
+            class="stat-card bg-gradient-to-br from-purple-500 to-purple-700 text-white"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-purple-100 text-sm font-medium">Products</p>
+                <h3 class="text-3xl font-bold mt-2">
+                  <span id="total-products">0</span>
+                </h3>
+                <p class="text-purple-100 text-xs mt-2 font-sinhala">
+                  භාණ්ඩ ගණන
+                </p>
+              </div>
+              <div class="bg-white/20 p-4 rounded-2xl">
+                <i class="ri-box-3-line text-4xl"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Items -->
+          <div
+            class="stat-card bg-gradient-to-br from-accent-500 to-accent-700 text-white"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-accent-100 text-sm font-medium">Low Stock</p>
+                <h3 class="text-3xl font-bold mt-2">
+                  <span id="low-stock-count">0</span>
+                </h3>
+                <p class="text-accent-100 text-xs mt-2 font-sinhala">අඩු තොග</p>
+              </div>
+              <div class="bg-white/20 p-4 rounded-2xl">
+                <i class="ri-alert-line text-4xl"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div
+            class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+          >
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                onclick="showPage('pos')"
+                class="action-btn bg-primary-500 hover:bg-primary-600 text-white"
+              >
+                <i class="ri-add-circle-line text-2xl mb-2"></i>
+                <span>New Bill</span>
+              </button>
+              <button
+                onclick="showPage('inventory')"
+                class="action-btn bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <i class="ri-add-box-line text-2xl mb-2"></i>
+                <span>Add Stock</span>
+              </button>
+              <button
+                onclick="showPage('reports')"
+                class="action-btn bg-purple-500 hover:bg-purple-600 text-white"
+              >
+                <i class="ri-bar-chart-line text-2xl mb-2"></i>
+                <span>View Reports</span>
+              </button>
+              <button
+                onclick="exportData()"
+                class="action-btn bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                <i class="ri-download-line text-2xl mb-2"></i>
+                <span>Export Data</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Low Stock Alerts -->
+          <div
+            class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+          >
+            <h3 class="text-xl font-bold text-gray-900 mb-4">
+              <i class="ri-alert-line text-accent-500"></i>
+              Low Stock Alerts
+            </h3>
+            <div id="low-stock-list" class="space-y-3 max-h-64 overflow-y-auto">
+              <!-- Low stock items will be populated here -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- POS Page -->
+      <div id="page-pos" class="page-content hidden">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900">Point of Sale</h2>
+          <p class="text-gray-600 mt-1 font-sinhala">නව බිල්පතක්</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Products Grid -->
+          <div class="lg:col-span-2">
+            <div
+              class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100"
+            >
+              <!-- Search Bar -->
+              <div class="mb-6">
+                <div class="relative">
+                  <i
+                    class="ri-search-line absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"
+                  ></i>
+                  <input
+                    type="text"
+                    id="product-search"
+                    placeholder="Search products... (භාණ්ඩ සොයන්න)"
+                    class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none transition-all"
+                    oninput="searchProducts(this.value)"
+                    onkeydown="handleSearchKeydown(event)"
+                    autofocus
+                  />
+                </div>
+              </div>
+
+              <!-- Category Filters -->
+              <div class="flex flex-wrap gap-2 mb-6">
+                <button
+                  onclick="filterByCategory(event, 'all')"
+                  class="category-filter-btn active"
+                  data-category="all"
+                >
+                  <i class="ri-apps-line"></i> All
+                </button>
+                <button
+                  onclick="filterByCategory(event, 'Grocery')"
+                  class="category-filter-btn"
+                  data-category="Grocery"
+                >
+                  <i class="ri-shopping-bag-line"></i> Grocery
+                </button>
+                <button
+                  onclick="filterByCategory(event, 'Vegetables')"
+                  class="category-filter-btn"
+                  data-category="Vegetables"
+                >
+                  <i class="ri-plant-line"></i> Vegetables
+                </button>
+                <button
+                  onclick="filterByCategory(event, 'Biscuits')"
+                  class="category-filter-btn"
+                  data-category="Biscuits"
+                >
+                  <i class="ri-cake-line"></i> Biscuits
+                </button>
+                <button
+                  onclick="filterByCategory(event, 'Household')"
+                  class="category-filter-btn"
+                  data-category="Household"
+                >
+                  <i class="ri-home-4-line"></i> Household
+                </button>
+              </div>
+
+              <!-- Products Grid -->
+              <div
+                id="products-grid"
+                class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto"
+              >
+                <!-- Products will be populated here -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Cart / Bill Section -->
+          <div class="lg:col-span-1">
+            <div
+              class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 sticky top-24"
+            >
+              <h3 class="text-2xl font-bold text-gray-900 mb-4">
+                <i class="ri-shopping-cart-2-line text-primary-500"></i>
+                Current Bill
+              </h3>
+
+              <!-- Cart Items -->
+              <div
+                id="cart-items"
+                class="space-y-3 mb-6 max-h-80 overflow-y-auto"
+              >
+                <div class="text-center text-gray-400 py-12">
+                  <i class="ri-shopping-cart-line text-6xl mb-4"></i>
+                  <p class="font-sinhala">බිල්පත හිස්</p>
+                  <p class="text-sm">Add items to cart</p>
+                </div>
+              </div>
+
+              <!-- Total -->
+              <div class="border-t-2 border-gray-200 pt-4 mb-4">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-gray-600">Subtotal:</span>
+                  <span class="text-lg font-semibold"
+                    >Rs. <span id="cart-subtotal">0.00</span></span
+                  >
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-xl font-bold text-gray-900">Total:</span>
+                  <span class="text-3xl font-bold text-primary-600"
+                    >Rs. <span id="cart-total">0.00</span></span
+                  >
+                </div>
+              </div>
+
+              <!-- Payment Section -->
+              <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 space-y-3">
+                <label class="flex items-center justify-between border-b border-gray-200 pb-2">
+                  <span class="text-sm font-semibold text-gray-700">Credit Sale</span>
+                  <input type="checkbox" id="is-credit-sale" class="w-4 h-4" onchange="toggleCreditSaleFields()" />
+                </label>
+
+                <div id="credit-sale-fields" class="grid grid-cols-1 md:grid-cols-2 gap-2 hidden">
+                  <select
+                    id="pos-credit-customer-select"
+                    onchange="handlePosCreditCustomerSelect()"
+                    class="md:col-span-2 w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
+                  >
+                    <option value="">Select saved customer (optional)</option>
+                  </select>
+                  <input
+                    type="text"
+                    id="credit-customer-code"
+                    onblur="handleCreditCustomerCodeLookup()"
+                    list="credit-customer-codes"
+                    placeholder="Customer number/code"
+                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
+                  />
+                  <datalist id="credit-customer-codes"></datalist>
+                  <input
+                    type="text"
+                    id="credit-customer-name"
+                    placeholder="Customer name"
+                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    id="credit-customer-phone"
+                    placeholder="Phone (optional)"
+                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
+                  />
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-semibold text-gray-700">Cash Tendered
+                    <span class="block text-[10px] text-gray-400 font-sinhala">(පාරිභෝගිකයා දුන් මුදල)</span>
+                  </label>
+                  <div class="relative w-32">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">Rs.</span>
+                    <input 
+                      type="number" 
+                      id="cash-tendered" 
+                      placeholder="0.00" 
+                      oninput="calculateBalance()"
+                      class="w-full pl-8 pr-2 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none text-right font-bold"
+                    >
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between border-t border-gray-200 pt-2">
+                  <span class="text-sm font-semibold text-gray-700">Balance
+                    <span class="block text-[10px] text-gray-400 font-sinhala">(ඉතිරි මුදල)</span>
+                  </span>
+                  <span class="text-xl font-bold text-accent-600">Rs. <span id="cart-balance">0.00</span></span>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="space-y-3">
+                <button
+                  onclick="completeSale()"
+                  class="w-full bg-gradient-to-r from-primary-500 to-primary-700 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-all transform hover:scale-105"
+                >
+                  <i class="ri-check-line"></i>
+                  Complete Sale
+                </button>
+                <button
+                  onclick="clearCart()"
+                  class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+                >
+                  <i class="ri-delete-bin-line"></i>
+                  Clear Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory Page -->
+      <div id="page-inventory" class="page-content hidden">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">
+              Inventory Management
+            </h2>
+            <p class="text-gray-600 mt-1 font-sinhala">තොග කළමනාකරණය</p>
+          </div>
+          <div class="flex gap-4">
+            <button
+              onclick="showReceiveStockModal()"
+              class="w-full bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-xl font-bold hover:shadow-lg transition-all transform hover:scale-105"
+            >
+              <i class="ri-truck-line"></i>
+              Receive Stock / Add Products (තොග ලබා ගැනීම)
+            </button>
+          </div>
+        </div>
+
+        <!-- Inventory Table -->
+        <div
+          class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Product Name
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Category
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Type
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Price
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Stock
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body">
+                <!-- Inventory items will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports Page -->
+      <div id="page-reports" class="page-content hidden">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">Sales Reports</h2>
+            <p class="text-gray-600 mt-1 font-sinhala">විකුණුම් වාර්තා</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-right shadow-sm">
+              <p class="text-[11px] uppercase tracking-wide text-gray-500">Current Stock Sell Value</p>
+              <p class="text-sm font-bold text-gray-900">Rs. <span id="report-current-stock-total">0.00</span></p>
+              <p class="text-[11px] uppercase tracking-wide text-gray-500 mt-1">Current Stock Cost Value</p>
+              <p class="text-sm font-bold text-blue-700">Rs. <span id="report-current-stock-cost-total">0.00</span></p>
+            </div>
+            <button onclick="exportStockCSV()" class="bg-gray-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-gray-900 transition-all flex items-center gap-2">
+              <i class="ri-archive-line"></i> Export Current Stock
+            </button>
+          </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div
+          class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6"
+        >
+          <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-100 pb-4">
+              <button onclick="setReportRange('all')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">All</button>
+              <button onclick="setReportRange('today')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">Today</button>
+              <button onclick="setReportRange('yesterday')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">Yesterday</button>
+              <button onclick="setReportRange('thisMonth')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">This Month</button>
+              <button onclick="setReportRange('lastMonth')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">Last Month</button>
+              <button onclick="setReportRange('thisYear')" class="px-4 py-2 bg-gray-100 hover:bg-primary-500 hover:text-white rounded-xl text-sm font-semibold transition-all">This Year</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >From Date</label
+              >
+              <input
+                type="date"
+                id="report-from-date"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2"
+                >To Date</label
+              >
+              <input
+                type="date"
+                id="report-to-date"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                onclick="generateReport()"
+                class="w-full bg-primary-500 text-white px-6 py-2 rounded-xl font-semibold hover:bg-primary-600 transition-all"
+              >
+                <i class="ri-file-chart-line"></i>
+                Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Results -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div
+            class="stat-card bg-gradient-to-br from-primary-500 to-primary-700 text-white"
+          >
+            <div>
+              <p class="text-primary-100 text-sm font-medium">Net Sales (After Returns)</p>
+              <h3 class="text-3xl font-bold mt-2">
+                Rs. <span id="report-total-sales">0.00</span>
+              </h3>
+            </div>
+          </div>
+          
+          <div
+            class="stat-card bg-gradient-to-br from-green-500 to-green-700 text-white"
+          >
+            <div>
+              <p class="text-green-100 text-sm font-medium">Gross Profit</p>
+              <h3 class="text-3xl font-bold mt-2">
+                Rs. <span id="report-total-profit">0.00</span>
+              </h3>
+            </div>
+          </div>
+
+          <div
+            class="stat-card bg-gradient-to-br from-blue-500 to-blue-700 text-white"
+          >
+            <div>
+              <p class="text-blue-100 text-sm font-medium">
+                Total Transactions
+              </p>
+              <h3 class="text-3xl font-bold mt-2">
+                <span id="report-total-transactions">0</span>
+              </h3>
+            </div>
+          </div>
+          <div
+            class="stat-card bg-gradient-to-br from-purple-500 to-purple-700 text-white"
+          >
+            <div>
+              <p class="text-purple-100 text-sm font-medium">Average Bill</p>
+              <h3 class="text-3xl font-bold mt-2">
+                Rs. <span id="report-avg-bill">0.00</span>
+              </h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Income Statement -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <i class="ri-money-dollar-circle-line text-green-600"></i>
+              Income Statement (ලාභ අලාභ ගිණුම)
+            </h3>
+            <button onclick="exportIncomeStatementCSV()" class="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-200 transition-all">
+            <i class="ri-file-excel-line"></i> Export Income Statement
+            </button>
+          </div>
+            
+            <div class="space-y-3">
+                <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-600">Gross Sales (මුළු විකුණුම්)</span>
+              <span class="font-bold text-gray-900">Rs. <span id="is-gross-sales">0.00</span></span>
+                </div>
+
+            <div class="flex justify-between items-center text-sm pl-4 mt-1">
+              <span class="text-gray-600">Less: Customer Returns (පාරිභෝගික ආපසු දීම්)</span>
+              <span class="text-red-500">(Rs. <span id="is-customer-returns">0.00</span>)</span>
+            </div>
+
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-700 font-semibold">Net Sales</span>
+              <span class="font-bold text-gray-900">Rs. <span id="is-revenue">0.00</span></span>
+            </div>
+
+                <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-600">COGS - Gross (විකුණුම් බඩු වියදම)</span>
+              <span class="text-red-500">(Rs. <span id="is-cogs-gross">0.00</span>)</span>
+            </div>
+
+            <div class="flex justify-between items-center text-sm pl-4 mt-1">
+              <span class="text-gray-600">Less: Supplier Return Credit (සැපයුම්කරු return credit)</span>
+              <span class="text-blue-600">Rs. <span id="is-supplier-returns">0.00</span></span>
+            </div>
+
+            <div class="flex justify-between items-center text-sm pl-4 mt-1">
+              <span class="text-gray-600">Less: Customer Return Cost (Stock Back Value)</span>
+              <span class="text-blue-600">Rs. <span id="is-customer-return-cost">0.00</span></span>
+            </div>
+
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-gray-700 font-semibold">Net COGS</span>
+                    <span class="text-red-500">(Rs. <span id="is-cogs">0.00</span>)</span>
+                </div>
+                
+                <div class="border-t border-gray-200 my-2"></div>
+                
+                <div class="flex justify-between items-center text-base">
+                    <span class="font-bold text-gray-800">Gross Profit (දළ ලාභය)</span>
+                    <span class="font-bold text-green-600">Rs. <span id="is-gross-profit">0.00</span></span>
+                </div>
+                
+                <div class="flex justify-between items-center text-sm pl-4 mt-2">
+                    <span class="text-gray-600">Other Expenses (වෙනත් වියදම්)</span>
+                    <span class="text-red-500">(Rs. <span id="is-expenses">0.00</span>)</span>
+                </div>
+                
+                <div class="border-t-2 border-gray-300 my-2"></div>
+                
+                <div class="flex justify-between items-center text-lg">
+                    <span class="font-bold text-gray-900">Net Profit (ශුද්ධ ලාභය)</span>
+                    <span class="font-bold text-primary-600">Rs. <span id="is-net-profit">0.00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expense Details for Income Statement -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-900">Expense Details (Income Statement)</h3>
+            <span class="text-sm font-semibold text-red-600">Total: Rs. <span id="report-expense-total">0.00</span></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Description</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="report-expense-table-body">
+                <!-- Expense details populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900">Expense Category Breakdown</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Amount</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Share</th>
+                </tr>
+              </thead>
+              <tbody id="report-expense-category-body">
+                <!-- Category totals populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="mb-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Top 5 Products (Best Sellers)</h3>
+                <div id="report-top-products" class="space-y-3">
+                    <p class="text-gray-400 text-center py-4">Generate report to see top products</p>
+                </div>
+            </div>
+             <!-- We can add another card here later, e.g. Payment Methods or Category Shares -->
+        </div>
+
+        <!-- Sales Table -->
+        <div
+          class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100"
+        >
+          <div class="p-6 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-900">Sales Details (විකුණුම් විස්තර)</h3>
+            <button onclick="exportSalesCSV()" class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition-all">
+                <i class="ri-file-excel-line"></i> Export to Excel
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Bill No.
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Date & Time
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Items
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Total Amount
+                  </th>
+                  <th
+                    class="px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="sales-report-table-body">
+                <!-- Sales will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Purchase History Table -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mt-8 mb-6">
+          <div class="p-6 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-900">Purchase History (මිලදී ගැනුම් ඉතිහාසය)</h3>
+            <button onclick="exportPurchasesCSV()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-200 transition-all">
+                <i class="ri-file-excel-line"></i> Export to Excel
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Supplier</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Product Details</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Cost (Buy)</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Price (Sell)</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Total</th>
+                </tr>
+              </thead>
+              <tbody id="purchase-history-body" class="divide-y divide-gray-100">
+                <!-- Data populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Returns Summary in Reports -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-700 text-white">
+            <div>
+              <p class="text-amber-100 text-sm font-medium">Customer Returns (Sales Reduced)</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="report-customer-returns">0.00</span></h3>
+            </div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-cyan-500 to-cyan-700 text-white">
+            <div>
+              <p class="text-cyan-100 text-sm font-medium">Supplier Returns (Credits)</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="report-supplier-returns">0.00</span></h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="stat-card bg-gradient-to-br from-indigo-500 to-indigo-700 text-white">
+            <div>
+              <p class="text-indigo-100 text-sm font-medium">Customer Receivable Outstanding</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="report-receivable-outstanding">0.00</span></h3>
+              <p class="text-xs text-indigo-100 mt-1">Period increase: Rs. <span id="report-receivable-period">0.00</span></p>
+            </div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-rose-500 to-rose-700 text-white">
+            <div>
+              <p class="text-rose-100 text-sm font-medium">Supplier Payable Outstanding</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="report-payable-outstanding">0.00</span></h3>
+              <p class="text-xs text-rose-100 mt-1">Period increase: Rs. <span id="report-payable-period">0.00</span></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900">Customer Return Details</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Item</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Qty</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Refund Amount</th>
+                </tr>
+              </thead>
+              <tbody id="report-customer-return-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900">Supplier Return Details</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Item</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Qty</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Credit Amount</th>
+                </tr>
+              </thead>
+              <tbody id="report-supplier-return-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6 flex items-center justify-between">
+            <h3 class="text-xl font-bold text-gray-900">Customer Ledger (Receivables)</h3>
+            <button onclick="exportCustomerLedgerCSV()" class="bg-indigo-100 text-indigo-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-indigo-200 transition-all">
+              <i class="ri-file-excel-line"></i> Export
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ref/Note</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Impact</th>
+                </tr>
+              </thead>
+              <tbody id="report-customer-ledger-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6 flex items-center justify-between">
+            <h3 class="text-xl font-bold text-gray-900">Supplier Ledger (Payables)</h3>
+            <button onclick="exportSupplierLedgerCSV()" class="bg-rose-100 text-rose-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-rose-200 transition-all">
+              <i class="ri-file-excel-line"></i> Export
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Supplier</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ref/Note</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Impact</th>
+                </tr>
+              </thead>
+              <tbody id="report-supplier-ledger-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses Page -->
+      <div id="page-expenses" class="page-content hidden">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">Expense Management</h2>
+            <p class="text-gray-600 mt-1 font-sinhala">වියදම් කළමනාකරණය</p>
+          </div>
+          <button onclick="exportExpensesCSV()" class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition-all">
+            <i class="ri-file-excel-line"></i> Export to Excel
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Add New Expense</h3>
+          <form id="expense-form" onsubmit="saveExpense(event)">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                <input
+                  type="date"
+                  id="expense-date"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select
+                  id="expense-category"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none bg-white"
+                >
+                  <option value="">Select Category</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Salary">Salary</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                <input
+                  type="text"
+                  id="expense-description"
+                  placeholder="e.g., Light Bill, Water Bill, Internet"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Amount (Rs.)</label>
+                <input
+                  type="number"
+                  id="expense-amount"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+            </div>
+            <div class="flex justify-end mt-4">
+              <button
+                type="submit"
+                class="bg-gradient-to-r from-primary-500 to-primary-700 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                <i class="ri-save-line"></i>
+                Save Expense
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">From Date</label>
+              <input
+                type="date"
+                id="expense-from-date"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">To Date</label>
+              <input
+                type="date"
+                id="expense-to-date"
+                class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+              />
+            </div>
+            <div class="flex items-end">
+              <button
+                onclick="loadExpensesTable()"
+                class="w-full bg-primary-500 text-white px-6 py-2 rounded-xl font-semibold hover:bg-primary-600 transition-all"
+              >
+                <i class="ri-filter-3-line"></i>
+                Filter
+              </button>
+            </div>
+            <div class="flex items-end">
+              <button
+                onclick="setExpenseRange('all')"
+                class="w-full bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-semibold hover:bg-gray-200 transition-all"
+              >
+                <i class="ri-refresh-line"></i>
+                Show All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="stat-card bg-gradient-to-br from-red-500 to-red-700 text-white lg:col-span-1">
+            <div>
+              <p class="text-red-100 text-sm font-medium">Filtered Expenses</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="expense-total">0.00</span></h3>
+            </div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-orange-500 to-orange-700 text-white lg:col-span-2">
+            <div>
+              <p class="text-orange-100 text-sm font-medium">Records</p>
+              <h3 class="text-3xl font-bold mt-2"><span id="expense-record-count">0</span></h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Category</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Description</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Amount</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="expense-table-body">
+                <!-- Expenses will be loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Returns Page -->
+      <div id="page-returns" class="page-content hidden">
+        <div class="mb-6 flex justify-between items-center">
+          <div>
+            <h2 class="text-3xl font-bold text-gray-900">Returns Management</h2>
+            <p class="text-gray-600 mt-1 font-sinhala">පාරිභෝගික සහ සැපයුම්කරු ආපසු භාර ගැනීම්</p>
+          </div>
+          <button onclick="exportReturnsCSV()" class="bg-green-100 text-green-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-200 transition-all">
+            <i class="ri-file-excel-line"></i> Export Returns CSV
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">From Date</label>
+              <input type="date" id="return-from-date" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">To Date</label>
+              <input type="date" id="return-to-date" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div class="flex items-end">
+              <button onclick="loadReturnsTables()" class="w-full bg-primary-500 text-white px-6 py-2 rounded-xl font-semibold hover:bg-primary-600 transition-all">
+                <i class="ri-filter-3-line"></i> Filter
+              </button>
+            </div>
+            <div class="flex items-end">
+              <button onclick="setReturnRange('all')" class="w-full bg-gray-100 text-gray-700 px-6 py-2 rounded-xl font-semibold hover:bg-gray-200 transition-all">
+                <i class="ri-refresh-line"></i> Show All
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Customer Return</h3>
+            <form id="customer-return-form" onsubmit="saveCustomerReturn(event)" class="space-y-4">
+              <input type="hidden" id="customer-return-id" />
+              <input type="hidden" id="customer-return-bill-id" />
+              <input type="hidden" id="customer-return-bill-item-index" />
+              <input type="hidden" id="customer-return-max-qty" />
+
+              <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <h4 class="font-semibold text-amber-800 mb-3">Bill-based Return (Old Bill)</h4>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Bill No.</label>
+                    <input type="number" id="customer-return-bill-no" min="1" class="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:border-amber-500 focus:outline-none" placeholder="Enter bill number" />
+                  </div>
+                  <div>
+                    <button type="button" onclick="loadBillForReturn()" class="w-full bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all">
+                      <i class="ri-receipt-line"></i> Load Bill
+                    </button>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Bill Item</label>
+                    <select id="customer-return-bill-item" onchange="selectBillReturnItem()" class="w-full px-3 py-2 border-2 border-amber-200 rounded-lg focus:border-amber-500 focus:outline-none bg-white">
+                      <option value="">Select bill item</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                  <input type="date" id="customer-return-date" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Barcode</label>
+                  <input type="text" id="customer-return-barcode" required oninput="handleCustomerReturnBarcode(this.value)" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" placeholder="Scan or type barcode" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
+                  <input type="text" id="customer-return-name" readonly class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl bg-gray-50" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                  <input type="number" id="customer-return-qty" oninput="recalcCustomerReturnAmount()" step="0.01" min="0.01" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Refund Amount (Rs.)</label>
+                  <input type="number" id="customer-return-amount" step="0.01" min="0" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Reason</label>
+                  <input type="text" id="customer-return-reason" placeholder="Damaged / Wrong item / Other" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+              </div>
+              <button type="submit" class="bg-gradient-to-r from-amber-500 to-amber-700 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="ri-arrow-go-back-line"></i> Save Customer Return
+              </button>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Supplier Return</h3>
+            <form id="supplier-return-form" onsubmit="saveSupplierReturn(event)" class="space-y-4">
+              <input type="hidden" id="supplier-return-id" />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                  <input type="date" id="supplier-return-date" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Barcode</label>
+                  <input type="text" id="supplier-return-barcode" required oninput="handleSupplierReturnBarcode(this.value)" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" placeholder="Scan or type barcode" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Item Name</label>
+                  <input type="text" id="supplier-return-name" readonly class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl bg-gray-50" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Quantity</label>
+                  <input type="number" id="supplier-return-qty" oninput="recalcSupplierReturnAmount()" step="0.01" min="0.01" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Credit Amount (Rs.)</label>
+                  <input type="number" id="supplier-return-amount" step="0.01" min="0" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Supplier Name</label>
+                  <input type="text" id="supplier-return-supplier" placeholder="Supplier name" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Reason</label>
+                  <input type="text" id="supplier-return-reason" placeholder="Damaged stock / Wrong batch / Other" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+              </div>
+              <button type="submit" class="bg-gradient-to-r from-cyan-500 to-cyan-700 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                <i class="ri-arrow-go-forward-line"></i> Save Supplier Return
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-700 text-white">
+            <div>
+              <p class="text-amber-100 text-sm font-medium">Customer Return Total</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="customer-return-total">0.00</span></h3>
+            </div>
+          </div>
+          <div class="stat-card bg-gradient-to-br from-cyan-500 to-cyan-700 text-white">
+            <div>
+              <p class="text-cyan-100 text-sm font-medium">Supplier Return Total</p>
+              <h3 class="text-3xl font-bold mt-2">Rs. <span id="supplier-return-total">0.00</span></h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900">Customer Return List</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Item</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Qty</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Refund</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reason</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customer-return-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 mb-6">
+          <div class="p-6">
+            <h3 class="text-xl font-bold text-gray-900">Supplier Return List</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Supplier</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Barcode</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Item</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Qty</th>
+                  <th class="px-6 py-4 text-right text-sm font-semibold text-gray-700">Credit</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Reason</th>
+                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-return-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Page -->
+      <div id="page-settings" class="page-content hidden">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900">Settings</h2>
+          <p class="text-gray-600 mt-1 font-sinhala">සැකසුම්</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <div class="space-y-6">
+            <!-- Shop Information -->
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">
+                <i class="ri-store-2-line text-primary-500"></i>
+                Shop Information
+              </h3>
+              <p class="text-gray-600 mb-4 font-sinhala">කඩේ විස්තර (බිල් එකේ දැක්වේ)</p>
+              
+              <form id="shop-settings-form" onsubmit="saveShopSettings(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Shop Name *
+                      <span class="text-xs text-gray-500 font-sinhala">(කඩේ නම)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="shop-name"
+                      required
+                      placeholder="Sillara Badu Kadaya"
+                      class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Phone Number *
+                      <span class="text-xs text-gray-500 font-sinhala">(දුරකථන)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="shop-phone"
+                      required
+                      placeholder="077-1234567"
+                      class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
+                  
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Address
+                      <span class="text-xs text-gray-500 font-sinhala">(ලිපිනය)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="shop-address"
+                      placeholder="No. 123, Main Street, Colombo"
+                      class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    />
+                  </div>
+                  
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                      Additional Info
+                      <span class="text-xs text-gray-500 font-sinhala">(අමතර තොරතුරු)</span>
+                    </label>
+                    <textarea
+                      id="shop-info"
+                      rows="2"
+                      placeholder="e.g., Opening hours, email, etc."
+                      class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                    ></textarea>
+                  </div>
+                </div>
+                
+                <div class="flex justify-end">
+                  <button
+                    type="submit"
+                    class="bg-gradient-to-r from-primary-500 to-primary-700 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all transform hover:scale-105"
+                  >
+                    <i class="ri-save-line"></i>
+                    Save Shop Settings
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+          <div class="space-y-6">
+            <!-- Category Management -->
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Category Management</h3>
+              <p class="text-gray-600 mb-4 font-sinhala">කැටගරි කළමනාකරණය</p>
+              
+              <div class="flex gap-2 mb-4">
+                <input type="text" id="new-category-input" placeholder="New Category Name..." class="flex-1 px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none">
+                <button onclick="addNewCategory()" class="bg-primary-500 text-white px-4 py-2 rounded-xl font-semibold hover:bg-primary-600 transition-all">
+                  <i class="ri-add-line"></i> Add
+                </button>
+              </div>
+
+              <div id="settings-category-list" class="flex flex-wrap gap-2">
+                <!-- Categories will be listed here -->
+              </div>
+            </div>
+
+            <!-- Export Data -->
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">
+                Data Management
+              </h3>
+              <p class="text-gray-600 mb-4">Backup and restore your data</p>
+              <div class="flex flex-wrap gap-4">
+                <button
+                  onclick="exportData()"
+                  class="bg-primary-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-600 transition-all"
+                >
+                  <i class="ri-download-line"></i>
+                  Export All Data
+                </button>
+                <button
+                  onclick="document.getElementById('import-file').click()"
+                  class="bg-blue-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-600 transition-all"
+                >
+                  <i class="ri-upload-line"></i>
+                  Import Data
+                </button>
+                <input
+                  type="file"
+                  id="import-file"
+                  accept=".json"
+                  class="hidden"
+                  onchange="importData(this)"
+                />
+                <button
+                  onclick="createManualAutoBackup()"
+                  class="bg-emerald-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-emerald-600 transition-all"
+                >
+                  <i class="ri-save-3-line"></i>
+                  Save Local Snapshot
+                </button>
+                <button
+                  onclick="restoreAutoBackup()"
+                  class="bg-amber-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-amber-600 transition-all"
+                >
+                  <i class="ri-history-line"></i>
+                  Restore Local Snapshot
+                </button>
+              </div>
+            </div>
+
+            <!-- Clear Data -->
+            <div class="border-b border-gray-200 pb-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">
+                Reset Database
+              </h3>
+              <p class="text-gray-600 mb-4">Clear all data and start fresh</p>
+              <button
+                onclick="confirmClearData()"
+                class="bg-accent-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-accent-600 transition-all"
+              >
+                <i class="ri-delete-bin-line"></i>
+                Clear All Data
+              </button>
+            </div>
+
+            <!-- Sample Data -->
+            <div>
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Sample Data</h3>
+              <p class="text-gray-600 mb-4">Load sample products for testing</p>
+              <button
+                onclick="loadSampleData()"
+                class="bg-purple-500 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-600 transition-all"
+              >
+                <i class="ri-database-2-line"></i>
+                Load Sample Data
+              </button>
+            </div>
+
+            <div class="border-t border-gray-200 pt-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Receivables and Payables</h3>
+              <p class="text-gray-600 mb-4">Moved to the new Parties tab for better workflow.</p>
+              <button onclick="showPage('parties')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-indigo-700 transition-all">
+                <i class="ri-team-line"></i> Open Parties Tab
+              </button>
+            </div>
+
+            <div class="border-t border-gray-200 pt-6">
+              <h3 class="text-xl font-bold text-gray-900 mb-2">Day Closing</h3>
+              <p class="text-gray-600 mb-4">End-of-day cash reconciliation</p>
+
+              <form onsubmit="closeDay(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                  <input type="date" id="day-close-date" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Opening Cash</label>
+                  <input type="number" step="0.01" min="0" id="day-close-opening" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Actual Cash</label>
+                  <input type="number" step="0.01" min="0" id="day-close-actual" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+                </div>
+                <div class="flex items-end">
+                  <button type="submit" class="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-all">
+                    <i class="ri-check-line"></i> Close Day
+                  </button>
+                </div>
+              </form>
+
+              <textarea id="day-close-notes" rows="2" placeholder="Notes..." class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none mb-4"></textarea>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-2 text-left">Date</th>
+                      <th class="px-4 py-2 text-right">Expected</th>
+                      <th class="px-4 py-2 text-right">Actual</th>
+                      <th class="px-4 py-2 text-right">Variance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="day-close-list-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parties Page -->
+      <div id="page-parties" class="page-content hidden">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900">Parties</h2>
+          <p class="text-gray-600 mt-1">Customers and Suppliers management</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-4">Master Records</h3>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="border border-gray-200 rounded-xl p-4">
+              <h4 class="font-bold text-gray-900 mb-3">Add Customer</h4>
+              <form onsubmit="addCustomerMaster(event)" class="space-y-3">
+                <input type="text" id="master-customer-code" placeholder="Customer number/code" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="master-customer-name" placeholder="Customer name" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="master-customer-phone" placeholder="Phone" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="number" step="0.01" min="0" id="master-customer-limit" placeholder="Credit limit (optional)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all">Save Customer</button>
+              </form>
+            </div>
+
+            <div class="border border-gray-200 rounded-xl p-4">
+              <h4 class="font-bold text-gray-900 mb-3">Add Supplier</h4>
+              <form onsubmit="addSupplierMaster(event)" class="space-y-3">
+                <input type="text" id="master-supplier-code" placeholder="Supplier number/code" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="master-supplier-name" placeholder="Supplier name" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="master-supplier-phone" placeholder="Phone" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="number" step="0.01" min="0" id="master-supplier-limit" placeholder="Credit limit (optional)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="master-supplier-terms" placeholder="Payment terms (e.g. Net 30)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <button type="submit" class="w-full bg-rose-600 text-white py-2 rounded-lg font-semibold hover:bg-rose-700 transition-all">Save Supplier</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div class="border border-gray-200 rounded-xl overflow-x-auto">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h4 class="font-bold text-gray-900">Customer List</h4>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="bg-white border-b border-gray-200">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Code</th>
+                    <th class="px-3 py-2 text-left">Name</th>
+                    <th class="px-3 py-2 text-left">Phone</th>
+                    <th class="px-3 py-2 text-right">Limit</th>
+                    <th class="px-3 py-2 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="party-customer-list-body"></tbody>
+              </table>
+            </div>
+
+            <div class="border border-gray-200 rounded-xl overflow-x-auto">
+              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <h4 class="font-bold text-gray-900">Supplier List</h4>
+              </div>
+              <table class="w-full text-sm">
+                <thead class="bg-white border-b border-gray-200">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Code</th>
+                    <th class="px-3 py-2 text-left">Name</th>
+                    <th class="px-3 py-2 text-left">Phone</th>
+                    <th class="px-3 py-2 text-left">Terms</th>
+                    <th class="px-3 py-2 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="party-supplier-list-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Receivables and Payables</h3>
+          <p class="text-gray-600 mb-4">Track customer dues and supplier payments</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+              <p class="text-sm text-indigo-700 font-semibold">Total Customer Receivable</p>
+              <p class="text-2xl font-bold text-indigo-900">Rs. <span id="settings-customer-outstanding">0.00</span></p>
+            </div>
+            <div class="bg-rose-50 border border-rose-100 rounded-xl p-4">
+              <p class="text-sm text-rose-700 font-semibold">Total Supplier Payable</p>
+              <p class="text-2xl font-bold text-rose-900">Rs. <span id="settings-supplier-outstanding">0.00</span></p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="border border-gray-200 rounded-xl p-4">
+              <h4 class="font-bold text-gray-900 mb-3">Record Customer Payment</h4>
+              <form onsubmit="recordCustomerPayment(event)" class="space-y-3">
+                <input type="date" id="customer-payment-date" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <select id="customer-payment-customer-id" onchange="handleCustomerPaymentCustomerChange()" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none">
+                  <option value="">Select existing customer (optional)</option>
+                </select>
+                <input type="text" id="customer-payment-name" placeholder="Customer name (required if no customer selected)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="number" step="0.01" min="0.01" id="customer-payment-amount" placeholder="Amount" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="customer-payment-note" placeholder="Note (optional)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all">Save Customer Payment</button>
+              </form>
+            </div>
+
+            <div class="border border-gray-200 rounded-xl p-4">
+              <h4 class="font-bold text-gray-900 mb-3">Record Supplier Payment</h4>
+              <form onsubmit="recordSupplierPayment(event)" class="space-y-3">
+                <input type="date" id="supplier-payment-date" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <select id="supplier-payment-supplier-id" onchange="handleSupplierPaymentSupplierChange()" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none">
+                  <option value="">Select existing supplier (optional)</option>
+                </select>
+                <input type="text" id="supplier-payment-name" placeholder="Supplier name (required if no supplier selected)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <select id="supplier-payment-purchase-id" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none">
+                  <option value="">Apply to all unpaid purchases (auto)</option>
+                </select>
+                <input type="number" step="0.01" min="0.01" id="supplier-payment-amount" placeholder="Amount" required class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <input type="text" id="supplier-payment-note" placeholder="Note (optional)" class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none" />
+                <button type="submit" class="w-full bg-rose-600 text-white py-2 rounded-lg font-semibold hover:bg-rose-700 transition-all">Save Supplier Payment</button>
+              </form>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="overflow-x-auto border border-gray-200 rounded-xl">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Date</th>
+                    <th class="px-3 py-2 text-left">Customer</th>
+                    <th class="px-3 py-2 text-left">Type</th>
+                    <th class="px-3 py-2 text-right">Impact</th>
+                  </tr>
+                </thead>
+                <tbody id="settings-customer-ledger-body"></tbody>
+              </table>
+            </div>
+
+            <div class="overflow-x-auto border border-gray-200 rounded-xl">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Date</th>
+                    <th class="px-3 py-2 text-left">Supplier</th>
+                    <th class="px-3 py-2 text-left">Type</th>
+                    <th class="px-3 py-2 text-right">Impact</th>
+                  </tr>
+                </thead>
+                <tbody id="settings-supplier-ledger-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="border border-gray-200 rounded-xl overflow-x-auto mt-6">
+            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="font-bold text-gray-900">Unpaid Purchases (by Purchase ID)</h4>
+              <p class="text-xs text-gray-600">Purchases not fully paid yet. Column shows payment progress.</p>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="bg-white border-b border-gray-200">
+                <tr>
+                  <th class="px-3 py-2 text-left font-semibold">Purchase ID</th>
+                  <th class="px-3 py-2 text-left font-semibold">Supplier</th>
+                  <th class="px-3 py-2 text-left font-semibold">Date</th>
+                  <th class="px-3 py-2 text-right font-semibold">Total Cost</th>
+                  <th class="px-3 py-2 text-right font-semibold">Paid</th>
+                  <th class="px-3 py-2 text-right font-semibold">Outstanding</th>
+                  <th class="px-3 py-2 text-center font-semibold">Progress</th>
+                </tr>
+              </thead>
+              <tbody id="unpaid-purchases-table">
+                <tr><td colspan="7" class="text-center p-4 text-gray-500">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border border-gray-200 rounded-xl overflow-x-auto mt-6">
+            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="font-bold text-gray-900">Customer Payment Status</h4>
+              <p class="text-xs text-gray-600">Track customer credit limits and outstanding balances</p>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="bg-white border-b border-gray-200">
+                <tr>
+                  <th class="px-3 py-2 text-left font-semibold">Customer Name</th>
+                  <th class="px-3 py-2 text-left font-semibold">Phone</th>
+                  <th class="px-3 py-2 text-right font-semibold">Outstanding</th>
+                  <th class="px-3 py-2 text-right font-semibold">Overdue</th>
+                  <th class="px-3 py-2 text-right font-semibold">Credit Limit</th>
+                  <th class="px-3 py-2 text-right font-semibold">Available</th>
+                  <th class="px-3 py-2 text-center font-semibold">Utilization</th>
+                </tr>
+              </thead>
+              <tbody id="customer-payment-status-table">
+                <tr><td colspan="7" class="text-center p-4 text-gray-500">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="border border-gray-200 rounded-xl overflow-x-auto mt-6">
+            <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="font-bold text-gray-900">Supplier Payment Status</h4>
+              <p class="text-xs text-gray-600">Track supplier credit and payment terms</p>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="bg-white border-b border-gray-200">
+                <tr>
+                  <th class="px-3 py-2 text-left font-semibold">Supplier Name</th>
+                  <th class="px-3 py-2 text-left font-semibold">Payment Terms</th>
+                  <th class="px-3 py-2 text-right font-semibold">Outstanding</th>
+                  <th class="px-3 py-2 text-right font-semibold">Overdue</th>
+                  <th class="px-3 py-2 text-right font-semibold">Credit Limit</th>
+                </tr>
+              </thead>
+              <tbody id="supplier-payment-status-table">
+                <tr><td colspan="5" class="text-center p-4 text-gray-500">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="product-modal" class="modal hidden">
+      <div class="modal-overlay" onclick="closeProductModal()"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="text-2xl font-bold text-gray-900" id="modal-title">
+            Add New Product
+          </h3>
+          <button
+            onclick="closeProductModal()"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <i class="ri-close-line text-2xl"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="product-form" onsubmit="saveProduct(event)">
+            <input type="hidden" id="product-id" />
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Product Name *</label
+                >
+                <input
+                  type="text"
+                  id="product-name"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                  Barcode (Scan or Type)
+                  <span class="text-xs text-gray-500 font-sinhala">(බාර්කෝඩ්)</span>
+                </label>
+                <div class="relative">
+                  <i class="ri-barcode-line absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl"></i>
+                  <input
+                    type="text"
+                    id="product-barcode"
+                    placeholder="Scan barcode here..."
+                    class="w-full pl-12 pr-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                  />
+                  <button type="button" onclick="document.getElementById('product-barcode').focus()" class="absolute right-2 top-1/2 transform -translate-y-1/2 text-blue-500 text-sm hover:underline">
+                    Use Scanner
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Category *</label
+                >
+                <select
+                  id="product-category"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none bg-white font-bold text-gray-800"
+                >
+                  <!-- Categories will be loaded here dynamically -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Type *</label
+                >
+                <select
+                  id="product-type"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                >
+                  <option value="">Select Type</option>
+                  <option value="unit">Unit (Packets/Pieces)</option>
+                  <option value="weight">Weight (Kg/g)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Buying Price (Rs.)</label
+                >
+                <input
+                  type="number"
+                  id="product-buying-price"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Selling Price (Rs.) *</label
+                >
+                <input
+                  type="number"
+                  id="product-price"
+                  step="0.01"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Current Stock *</label
+                >
+                <input
+                  type="number"
+                  id="product-stock"
+                  step="0.01"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2"
+                  >Low Stock Alert</label
+                >
+                <input
+                  type="number"
+                  id="product-min-stock"
+                  step="0.01"
+                  placeholder="5"
+                  class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+              <button
+                type="button"
+                onclick="closeProductModal()"
+                class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                <i class="ri-save-line"></i>
+                Save Product
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quantity Input Modal -->
+    <div id="quantity-modal" class="modal hidden">
+      <div class="modal-overlay" onclick="closeQuantityModal()"></div>
+      <div class="modal-content max-w-md">
+        <div class="modal-header">
+          <h3 class="text-2xl font-bold text-gray-900">Enter Quantity</h3>
+          <button
+            onclick="closeQuantityModal()"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <i class="ri-close-line text-2xl"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="text-center mb-6">
+            <h4
+              class="text-xl font-semibold text-gray-900"
+              id="qty-product-name"
+            ></h4>
+            <p class="text-gray-600" id="qty-product-type"></p>
+          </div>
+
+          <form id="quantity-form" onsubmit="addToCartWithQuantity(event)">
+            <input type="hidden" id="qty-product-id" />
+
+            <div class="mb-6">
+              <label
+                class="block text-sm font-semibold text-gray-700 mb-2"
+                id="qty-label"
+                >Quantity</label
+              >
+              <input
+                type="number"
+                id="quantity-input"
+                step="0.01"
+                min="0.01"
+                required
+                class="w-full px-4 py-3 text-2xl text-center border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none"
+                autofocus
+              />
+            </div>
+
+            <div class="flex justify-end space-x-4">
+              <button
+                type="button"
+                onclick="closeQuantityModal()"
+                class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                <i class="ri-shopping-cart-line"></i>
+                Add to Cart
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Receipt Modal -->
+    <div id="receipt-modal" class="modal hidden">
+      <div class="modal-overlay" onclick="closeReceiptModal()"></div>
+      <div class="modal-content max-w-md">
+        <div class="modal-header print:hidden">
+          <h3 class="text-2xl font-bold text-gray-900">Bill Receipt</h3>
+          <button
+            onclick="closeReceiptModal()"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <i class="ri-close-line text-2xl"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="receipt-content" class="receipt">
+            <!-- Receipt will be generated here -->
+          </div>
+
+          <div class="flex justify-end space-x-4 mt-6 print:hidden">
+            <button
+              onclick="closeReceiptModal()"
+              class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all"
+            >
+              Close
+            </button>
+            <button
+              onclick="window.print()"
+              class="px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              <i class="ri-printer-line"></i>
+              Print Bill
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Receive Stock Modal -->
+    <div id="receive-stock-modal" class="modal hidden">
+      <div class="modal-overlay" onclick="closeReceiveStockModal()"></div>
+      <div class="modal-content max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="modal-header">
+          <h3 class="text-2xl font-bold text-gray-900">Receive Stock (Purchasing)</h3>
+          <button onclick="closeReceiveStockModal()" class="text-gray-400 hover:text-gray-600">
+            <i class="ri-close-line text-2xl"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Supplier Number/Code</label>
+                <input type="text" id="purchase-supplier-code" onblur="handlePurchaseSupplierCodeLookup()" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" placeholder="e.g. 1001">
+              </div>
+              <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Supplier Name</label>
+                    <input type="text" id="purchase-supplier" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" placeholder="Enter Supplier Name">
+                </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Select Saved Supplier (optional)</label>
+                <select id="purchase-supplier-select" onchange="handlePurchaseSupplierSelect()" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none">
+                  <option value="">Select supplier from saved list</option>
+                </select>
+              </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+                    <input type="date" id="purchase-date" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none">
+                </div>
+            </div>
+
+            <!-- Add Item Config -->
+            <div class="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+                <h4 class="font-bold text-gray-700 mb-4 flex justify-between">
+                    <span>Add Item to Purchase</span>
+                    <span class="text-xs text-gray-500 font-normal">Scan existing or fill details for new product</span>
+                </h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <!-- Row 1 -->
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Barcode (Scan/Type)</label>
+                        <div class="relative">
+                            <input type="text" id="purchase-barcode" class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500" placeholder="Scan..." oninput="handlePurchaseBarcode(this.value)" onkeypress="if(event.key === 'Enter') handlePurchaseBarcodeEnter(this.value)">
+                            <i class="ri-barcode-line absolute left-2.5 top-2.5 text-gray-400"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-4 relative">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Product Name (Search)</label>
+                        <input type="text" id="purchase-name" class="w-full px-3 py-2 border border-blue-200 bg-white rounded-lg focus:outline-none focus:border-primary-500" placeholder="Product Name" oninput="searchPurchaseProducts(this.value)">
+                        <input type="hidden" id="purchase-product-id">
+                        <input type="hidden" id="purchase-is-new" value="true">
+                        <div id="purchase-search-results" class="hidden absolute bg-white shadow-xl z-50 border border-gray-100 rounded-lg mt-1 w-full max-h-48 overflow-y-auto left-0"></div>
+                    </div>
+                    
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Category</label>
+                         <select id="purchase-category" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 bg-white text-sm font-bold">
+                             <!-- Categories loaded dynamically -->
+                         </select>
+                         <datalist id="category-list"></datalist>
+                    </div>
+
+                    <div class="md:col-span-2">
+                         <label class="block text-xs font-semibold text-gray-500 mb-1">Type</label>
+                         <select id="purchase-type" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 text-sm">
+                             <option value="unit">Unit (Pcs)</option>
+                             <option value="weight">Weight (Kg)</option>
+                         </select>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Buying Price (Cost)</label>
+                        <input type="number" id="purchase-cost" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500" placeholder="0.00">
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Selling Price (New)</label>
+                        <input type="number" id="purchase-price" step="0.01" class="w-full px-3 py-2 border border-green-200 bg-white rounded-lg focus:outline-none focus:border-green-500" placeholder="0.00">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-500 mb-1">Quantity</label>
+                        <input type="number" id="purchase-qty" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 font-bold" placeholder="Qty">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-red-500 mb-1">Low Stock Limit</label>
+                        <input type="number" id="purchase-min-stock" step="0.01" class="w-full px-3 py-2 border border-red-200 rounded-lg focus:outline-none focus:border-red-500" placeholder="5.00">
+                    </div>
+
+                    <div class="md:col-span-2">
+                      <label class="block text-xs font-semibold text-indigo-500 mb-1">Expiry Date (Optional)</label>
+                      <input type="date" id="purchase-exp-date" class="w-full px-3 py-2 border border-indigo-200 rounded-lg focus:outline-none focus:border-indigo-500">
+                    </div>
+                    
+                    <div class="md:col-span-2 flex items-center h-10">
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white px-2 py-1 rounded border border-gray-200 w-full justify-center">
+                            <input type="checkbox" id="purchase-free-item" class="w-4 h-4 text-primary-600 rounded focus:ring-primary-500">
+                            <span class="text-xs font-medium text-gray-700">Free Item</span>
+                        </label>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <button onclick="addPurchaseItem()" class="w-full bg-primary-600 text-white px-3 py-2 rounded-lg font-bold hover:bg-primary-700 transition-all shadow-md">
+                            <i class="ri-add-line mr-1"></i> Add
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-1/3">Product</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500">Sell Price (Rs)</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500">Qty</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500">Unit Cost</th>
+                            <th class="px-4 py-2 text-right text-xs font-semibold text-gray-500">Total</th>
+                            <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-items-body">
+                        <!-- Dynamic items -->
+                    </tbody>
+                    <tfoot class="bg-gray-50 font-bold">
+                        <tr>
+                            <td colspan="3" class="px-4 py-2 text-right">Total Purchase Cost:</td>
+                            <td class="px-4 py-2 text-right">Rs. <span id="purchase-total">0.00</span></td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="flex justify-end space-x-4">
+                <button onclick="closeReceiveStockModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all">Cancel</button>
+                <button onclick="savePurchase()" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-700 text-white rounded-xl font-semibold hover:shadow-lg transition-all">Save Stock</button>
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="login-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content max-w-md">
+        <div class="modal-header">
+          <h3 class="text-2xl font-bold text-gray-900">Login</h3>
+        </div>
+        <div class="modal-body">
+          <form onsubmit="handleLogin(event)" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+              <input type="text" id="login-username" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+              <input type="password" id="login-password" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <p class="text-xs text-gray-500">Default owner login: admin / 1234</p>
+            <button type="submit" class="w-full bg-primary-600 text-white py-3 rounded-xl font-semibold hover:bg-primary-700 transition-all">
+              <i class="ri-login-box-line"></i> Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

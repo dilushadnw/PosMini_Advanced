@@ -72,7 +72,7 @@
     <!-- Navigation -->
     <nav class="bg-white shadow-lg sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
+        <div class="flex items-center h-16 gap-3">
           <div class="flex items-center space-x-3">
             <div
               class="bg-gradient-to-br from-primary-500 to-primary-700 p-2 rounded-xl shadow-lg"
@@ -86,7 +86,7 @@
           </div>
 
           <!-- Navigation Menu -->
-          <div class="hidden md:flex space-x-2">
+          <div class="desktop-nav-scroll hidden md:flex items-center gap-1 flex-1">
             <button
               onclick="showPage('dashboard')"
               id="nav-dashboard"
@@ -140,6 +140,14 @@
               <span>Parties</span>
             </button>
             <button
+              onclick="showPage('dayclose')"
+              id="nav-dayclose"
+              class="nav-btn"
+            >
+              <i class="ri-safe-2-line"></i>
+              <span>Day Close</span>
+            </button>
+            <button
               onclick="showPage('settings')"
               id="nav-settings"
               class="nav-btn"
@@ -149,7 +157,7 @@
             </button>
           </div>
 
-          <div class="hidden md:flex items-center ml-3 px-3 py-1.5 bg-gray-100 rounded-xl text-sm text-gray-700">
+          <div class="hidden lg:flex items-center shrink-0 px-3 py-1.5 bg-gray-100 rounded-xl text-sm text-gray-700 nav-user-chip">
             <i class="ri-user-3-line mr-2"></i>
             <span id="current-user-display">Not logged in</span>
             <button onclick="logout()" class="ml-3 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-lg">
@@ -238,6 +246,16 @@
             >
               <i class="ri-team-line"></i>
               <span>Parties</span>
+            </button>
+            <button
+              onclick="
+                showPage('dayclose');
+                toggleMobileMenu();
+              "
+              class="mobile-nav-btn"
+            >
+              <i class="ri-safe-2-line"></i>
+              <span>Day Close</span>
             </button>
             <button
               onclick="
@@ -533,8 +551,8 @@
                   <input
                     type="text"
                     id="credit-customer-code"
-                    onblur="handleCreditCustomerCodeLookup()"
                     list="credit-customer-codes"
+                    onblur="handleCreditCustomerCodeLookup()"
                     placeholder="Customer number/code"
                     class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-primary-500 focus:outline-none"
                   />
@@ -1641,45 +1659,103 @@
 
             <div class="border-t border-gray-200 pt-6">
               <h3 class="text-xl font-bold text-gray-900 mb-2">Day Closing</h3>
-              <p class="text-gray-600 mb-4">End-of-day cash reconciliation</p>
-
-              <form onsubmit="closeDay(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
-                  <input type="date" id="day-close-date" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Opening Cash</label>
-                  <input type="number" step="0.01" min="0" id="day-close-opening" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Actual Cash</label>
-                  <input type="number" step="0.01" min="0" id="day-close-actual" required class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
-                </div>
-                <div class="flex items-end">
-                  <button type="submit" class="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-all">
-                    <i class="ri-check-line"></i> Close Day
-                  </button>
-                </div>
-              </form>
-
-              <textarea id="day-close-notes" rows="2" placeholder="Notes..." class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none mb-4"></textarea>
-
-              <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th class="px-4 py-2 text-left">Date</th>
-                      <th class="px-4 py-2 text-right">Expected</th>
-                      <th class="px-4 py-2 text-right">Actual</th>
-                      <th class="px-4 py-2 text-right">Variance</th>
-                    </tr>
-                  </thead>
-                  <tbody id="day-close-list-body"></tbody>
-                </table>
-              </div>
+              <p class="text-gray-600 mb-4">Moved to a dedicated Day Close tab with full-width layout.</p>
+              <button onclick="showPage('dayclose')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-all">
+                <i class="ri-safe-2-line"></i> Open Day Close Tab
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Day Closing Page -->
+      <div id="page-dayclose" class="page-content hidden">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold text-gray-900">Day Closing</h2>
+          <p class="text-gray-600 mt-1">End-of-day cash reconciliation</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+          <form onsubmit="closeDay(event)" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Date</label>
+              <input type="date" id="day-close-date" required onchange="updateDayClosePreview()" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Opening Cash</label>
+              <input type="number" step="0.01" min="0" id="day-close-opening" required oninput="updateDayClosePreview()" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Expected Cash</label>
+              <input type="number" step="0.01" min="0" id="day-close-expected" readonly class="w-full px-4 py-2 border-2 border-gray-100 bg-gray-50 rounded-xl text-gray-700" />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Actual Cash</label>
+              <input type="number" step="0.01" min="0" id="day-close-actual" required oninput="updateDayClosePreview()" class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none" />
+            </div>
+            <div class="flex items-end">
+              <button type="submit" class="w-full bg-emerald-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-emerald-700 transition-all">
+                <i class="ri-check-line"></i> Close Day
+              </button>
+            </div>
+          </form>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <p class="text-xs text-gray-500">Variance</p>
+              <p class="text-xl font-bold" id="day-close-variance">0.00</p>
+            </div>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+              <p class="text-xs text-gray-500">Status</p>
+              <span id="day-close-status-badge" class="inline-flex items-center px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700 font-bold">Matched</span>
+            </div>
+            <label class="bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="day-close-require-admin" class="w-4 h-4" checked />
+              <span class="text-sm font-semibold text-gray-700">Require owner approval for shortage</span>
+            </label>
+          </div>
+
+          <div class="border border-gray-200 rounded-xl p-4 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-gray-900">Cash Denomination Count</h4>
+              <p class="text-sm text-gray-600">Auto fills Actual Cash</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="day-close-denoms">
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 5000</span><input type="number" min="0" step="1" id="day-denom-5000" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 1000</span><input type="number" min="0" step="1" id="day-denom-1000" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 500</span><input type="number" min="0" step="1" id="day-denom-500" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 100</span><input type="number" min="0" step="1" id="day-denom-100" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 50</span><input type="number" min="0" step="1" id="day-denom-50" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 20</span><input type="number" min="0" step="1" id="day-denom-20" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 10</span><input type="number" min="0" step="1" id="day-denom-10" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 5</span><input type="number" min="0" step="1" id="day-denom-5" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 2</span><input type="number" min="0" step="1" id="day-denom-2" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+              <label class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2"><span class="font-semibold text-gray-700">Rs 1</span><input type="number" min="0" step="1" id="day-denom-1" oninput="calculateDayCloseDenominations()" class="w-20 text-right border border-gray-200 rounded px-2 py-1" value="0" /></label>
+            </div>
+            <div class="mt-3 flex justify-end">
+              <div class="bg-emerald-50 text-emerald-700 rounded-lg px-4 py-2 font-bold">Counted Total: Rs <span id="day-close-denom-total">0.00</span></div>
+            </div>
+          </div>
+
+          <textarea id="day-close-notes" rows="2" placeholder="Notes..." class="w-full px-4 py-2 border-2 border-gray-200 rounded-xl focus:border-primary-500 focus:outline-none mb-4"></textarea>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left">Date</th>
+                <th class="px-4 py-3 text-right">Opening</th>
+                <th class="px-4 py-3 text-right">Expected</th>
+                <th class="px-4 py-3 text-right">Actual</th>
+                <th class="px-4 py-3 text-right">Variance</th>
+                <th class="px-4 py-3 text-left">Status</th>
+                <th class="px-4 py-3 text-left">Approved By</th>
+                <th class="px-4 py-3 text-left">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="day-close-list-body"></tbody>
+          </table>
         </div>
       </div>
 
@@ -1719,8 +1795,8 @@
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <div class="border border-gray-200 rounded-xl overflow-x-auto">
-              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <h4 class="font-bold text-gray-900">Customer List</h4>
+              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                <h4 class="font-bold text-gray-900">Customer Master List</h4>
               </div>
               <table class="w-full text-sm">
                 <thead class="bg-white border-b border-gray-200">
@@ -1732,13 +1808,15 @@
                     <th class="px-3 py-2 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody id="party-customer-list-body"></tbody>
+                <tbody id="customer-master-table-body">
+                  <tr><td colspan="5" class="text-center p-4 text-gray-500">Loading...</td></tr>
+                </tbody>
               </table>
             </div>
 
             <div class="border border-gray-200 rounded-xl overflow-x-auto">
-              <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <h4 class="font-bold text-gray-900">Supplier List</h4>
+              <div class="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                <h4 class="font-bold text-gray-900">Supplier Master List</h4>
               </div>
               <table class="w-full text-sm">
                 <thead class="bg-white border-b border-gray-200">
@@ -1750,7 +1828,9 @@
                     <th class="px-3 py-2 text-center">Action</th>
                   </tr>
                 </thead>
-                <tbody id="party-supplier-list-body"></tbody>
+                <tbody id="supplier-master-table-body">
+                  <tr><td colspan="5" class="text-center p-4 text-gray-500">Loading...</td></tr>
+                </tbody>
               </table>
             </div>
           </div>

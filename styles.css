@@ -22,11 +22,14 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.75rem;
   border-radius: 0.75rem;
   font-weight: 600;
+  font-size: 0.95rem;
   transition: all 0.3s ease;
   color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-btn:hover {
@@ -41,7 +44,34 @@ body {
 }
 
 .nav-btn i {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+}
+
+.nav-btn span {
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.desktop-nav-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.desktop-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-user-chip {
+  white-space: nowrap;
+}
+
+.nav-user-chip #current-user-display {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Mobile Navigation */

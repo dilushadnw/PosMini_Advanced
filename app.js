@@ -8,6 +8,8 @@ let purchaseCart = [];
 let loadedReturnBill = null;
 let lastIncomeStatement = null;
 let currentUser = null;
+const DAY_CLOSE_DENOMINATIONS = [5000, 1000, 500, 100, 50, 20, 10, 5, 2, 1];
+let dayClosePreviewToken = 0;
 
 const AUTO_BACKUP_KEY = 'sillara-auto-backups';
 const AUTO_BACKUP_LAST_KEY = 'sillara-auto-backup-last';
@@ -57,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (dayCloseDateEl) dayCloseDateEl.value = today;
     if (customerPaymentDateEl) customerPaymentDateEl.value = today;
     if (supplierPaymentDateEl) supplierPaymentDateEl.value = today;
+    updateDayClosePreview();
 
     const savedUserRaw = sessionStorage.getItem('sillara-user');
     if (savedUserRaw) {
@@ -86,6 +89,7 @@ async function initApp() {
     await runAutoBackupIfDue();
     await loadProducts();
     await loadCategories();
+    await loadPaymentFormOptions();
     await updateDashboard();
     await refreshLedgerSummaryCards();
     console.log('Sillara-POS Application initialized!');
@@ -369,8 +373,8 @@ async function loadPaymentFormOptions() {
     const customerSelect = document.getElementById('customer-payment-customer-id');
     const supplierSelect = document.getElementById('supplier-payment-supplier-id');
     const posCreditCustomerSelect = document.getElementById('pos-credit-customer-select');
-    const posCreditCustomerCodes = document.getElementById('credit-customer-codes');
     const purchaseSupplierSelect = document.getElementById('purchase-supplier-select');
+    const creditCustomerCodes = document.getElementById('credit-customer-codes');
     const customerDate = document.getElementById('customer-payment-date');
     const supplierDate = document.getElementById('supplier-payment-date');
 
@@ -414,28 +418,18 @@ async function loadPaymentFormOptions() {
     }
 
     if (posCreditCustomerSelect) {
-        const selectedPosCustomer = posCreditCustomerSelect.value;
+        const selectedPos = posCreditCustomerSelect.value;
         posCreditCustomerSelect.innerHTML = '<option value="">Select saved customer (optional)</option>';
         customers
             .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             .forEach((c) => {
-                const code = c.code ? `[${c.code}] ` : '';
+                const codeLabel = c.code ? `[${c.code}] ` : '';
                 const phone = c.phone ? ` - ${c.phone}` : '';
-                posCreditCustomerSelect.innerHTML += `<option value="${c.id}">${code}${c.name || 'Customer'}${phone}</option>`;
+                posCreditCustomerSelect.innerHTML += `<option value="${c.id}">${codeLabel}${c.name || 'Customer'}${phone}</option>`;
             });
-        if (selectedPosCustomer && posCreditCustomerSelect.querySelector(`option[value="${selectedPosCustomer}"]`)) {
-            posCreditCustomerSelect.value = selectedPosCustomer;
+        if (selectedPos && posCreditCustomerSelect.querySelector(`option[value="${selectedPos}"]`)) {
+            posCreditCustomerSelect.value = selectedPos;
         }
-    }
-
-    if (posCreditCustomerCodes) {
-        posCreditCustomerCodes.innerHTML = '';
-        customers
-            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
-            .forEach((c) => {
-                if (!c.code) return;
-                posCreditCustomerCodes.innerHTML += `<option value="${c.code}">${c.name || ''}</option>`;
-            });
     }
 
     if (purchaseSupplierSelect) {
@@ -444,12 +438,20 @@ async function loadPaymentFormOptions() {
         suppliers
             .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             .forEach((s) => {
-                const code = s.code ? `[${s.code}] ` : '';
-                purchaseSupplierSelect.innerHTML += `<option value="${s.id}">${code}${s.name || 'Supplier'}</option>`;
+                const codeLabel = s.code ? `[${s.code}] ` : '';
+                purchaseSupplierSelect.innerHTML += `<option value="${s.id}">${codeLabel}${s.name || 'Supplier'}</option>`;
             });
         if (selectedPurchaseSupplier && purchaseSupplierSelect.querySelector(`option[value="${selectedPurchaseSupplier}"]`)) {
             purchaseSupplierSelect.value = selectedPurchaseSupplier;
         }
+    }
+
+    if (creditCustomerCodes) {
+        creditCustomerCodes.innerHTML = customers
+            .filter((c) => c.code)
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+            .map((c) => `<option value="${c.code}">${(c.name || '').replaceAll('"', '&quot;')}</option>`)
+            .join('');
     }
 
     await handleSupplierPaymentSupplierChange();
@@ -500,122 +502,11 @@ async function handleCustomerPaymentCustomerChange() {
     }
 }
 
-async function handlePosCreditCustomerSelect() {
-    const select = document.getElementById('pos-credit-customer-select');
-    const codeEl = document.getElementById('credit-customer-code');
-    const nameEl = document.getElementById('credit-customer-name');
-    const phoneEl = document.getElementById('credit-customer-phone');
-    if (!select || !codeEl || !nameEl || !phoneEl) return;
-
-    const id = Number(select.value || 0);
-    if (!id) return;
-    const all = await DB.customers.getAll();
-    const c = all.find((x) => Number(x.id) === id);
-    if (!c) return;
-    codeEl.value = c.code || '';
-    nameEl.value = c.name || '';
-    phoneEl.value = c.phone || '';
-}
-
-async function handlePurchaseSupplierSelect() {
-    const select = document.getElementById('purchase-supplier-select');
-    const codeEl = document.getElementById('purchase-supplier-code');
-    const nameEl = document.getElementById('purchase-supplier');
-    if (!select || !codeEl || !nameEl) return;
-
-    const id = Number(select.value || 0);
-    if (!id) return;
-    const all = await DB.suppliers.getAll();
-    const s = all.find((x) => Number(x.id) === id);
-    if (!s) return;
-    codeEl.value = s.code || '';
-    nameEl.value = s.name || '';
-}
-
 async function loadPartyMasterDefaults() {
     const customerCodeEl = document.getElementById('master-customer-code');
     const supplierCodeEl = document.getElementById('master-supplier-code');
     if (customerCodeEl && !customerCodeEl.value) customerCodeEl.value = await DB.customers.generateNextCode();
     if (supplierCodeEl && !supplierCodeEl.value) supplierCodeEl.value = await DB.suppliers.generateNextCode();
-}
-
-async function loadPartyMasterLists() {
-    const customerBody = document.getElementById('party-customer-list-body');
-    const supplierBody = document.getElementById('party-supplier-list-body');
-    if (!customerBody && !supplierBody) return;
-
-    const [customers, suppliers] = await Promise.all([
-        DB.customers.getAll(),
-        DB.suppliers.getAll()
-    ]);
-
-    if (customerBody) {
-        const rows = [...customers].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
-        if (rows.length === 0) {
-            customerBody.innerHTML = '<tr><td colspan="5" class="px-3 py-3 text-center text-gray-400">No customers yet</td></tr>';
-        } else {
-            customerBody.innerHTML = rows.map((c) => `
-                <tr class="border-b border-gray-100">
-                    <td class="px-3 py-2">${c.code || '-'}</td>
-                    <td class="px-3 py-2">${c.name || ''}</td>
-                    <td class="px-3 py-2">${c.phone || '-'}</td>
-                    <td class="px-3 py-2 text-right">${Number(c.creditLimit || 0).toFixed(2)}</td>
-                    <td class="px-3 py-2 text-center">
-                        <button onclick="editCustomerMaster('${String(c.code || '').replaceAll("'", "\\'")}')" class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-semibold hover:bg-indigo-200">Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    }
-
-    if (supplierBody) {
-        const rows = [...suppliers].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
-        if (rows.length === 0) {
-            supplierBody.innerHTML = '<tr><td colspan="5" class="px-3 py-3 text-center text-gray-400">No suppliers yet</td></tr>';
-        } else {
-            supplierBody.innerHTML = rows.map((s) => `
-                <tr class="border-b border-gray-100">
-                    <td class="px-3 py-2">${s.code || '-'}</td>
-                    <td class="px-3 py-2">${s.name || ''}</td>
-                    <td class="px-3 py-2">${s.phone || '-'}</td>
-                    <td class="px-3 py-2">${s.paymentTerms || '-'}</td>
-                    <td class="px-3 py-2 text-center">
-                        <button onclick="editSupplierMaster('${String(s.code || '').replaceAll("'", "\\'")}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded text-xs font-semibold hover:bg-rose-200">Edit</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    }
-}
-
-async function editCustomerMaster(code) {
-    const customer = await DB.customers.getByCode(code);
-    if (!customer) return;
-    const codeEl = document.getElementById('master-customer-code');
-    const nameEl = document.getElementById('master-customer-name');
-    const phoneEl = document.getElementById('master-customer-phone');
-    const limitEl = document.getElementById('master-customer-limit');
-    if (codeEl) codeEl.value = customer.code || '';
-    if (nameEl) nameEl.value = customer.name || '';
-    if (phoneEl) phoneEl.value = customer.phone || '';
-    if (limitEl) limitEl.value = Number(customer.creditLimit || 0);
-    nameEl?.focus();
-}
-
-async function editSupplierMaster(code) {
-    const supplier = await DB.suppliers.getByCode(code);
-    if (!supplier) return;
-    const codeEl = document.getElementById('master-supplier-code');
-    const nameEl = document.getElementById('master-supplier-name');
-    const phoneEl = document.getElementById('master-supplier-phone');
-    const limitEl = document.getElementById('master-supplier-limit');
-    const termsEl = document.getElementById('master-supplier-terms');
-    if (codeEl) codeEl.value = supplier.code || '';
-    if (nameEl) nameEl.value = supplier.name || '';
-    if (phoneEl) phoneEl.value = supplier.phone || '';
-    if (limitEl) limitEl.value = Number(supplier.creditLimit || 0);
-    if (termsEl) termsEl.value = supplier.paymentTerms || '';
-    nameEl?.focus();
 }
 
 async function addCustomerMaster(event) {
@@ -644,7 +535,7 @@ async function addCustomerMaster(event) {
         document.getElementById('master-customer-limit').value = '';
         document.getElementById('master-customer-code').value = await DB.customers.generateNextCode();
         await loadPaymentFormOptions();
-        await loadPartyMasterLists();
+        await loadPartyMasterTables();
         await loadCustomerPaymentStatus();
         alert('Customer saved');
     } catch (error) {
@@ -681,13 +572,150 @@ async function addSupplierMaster(event) {
         document.getElementById('master-supplier-terms').value = '';
         document.getElementById('master-supplier-code').value = await DB.suppliers.generateNextCode();
         await loadPaymentFormOptions();
-        await loadPartyMasterLists();
+        await loadPartyMasterTables();
         await loadSupplierPaymentStatus();
         alert('Supplier saved');
     } catch (error) {
         console.error('Supplier save failed', error);
         alert('Unable to save supplier. Check supplier number/code uniqueness.');
     }
+}
+
+async function loadPartyMasterTables() {
+    const customerBody = document.getElementById('customer-master-table-body');
+    const supplierBody = document.getElementById('supplier-master-table-body');
+
+    const [customers, suppliers] = await Promise.all([
+        DB.customers.getAll(),
+        DB.suppliers.getAll()
+    ]);
+
+    if (customerBody) {
+        const rows = [...customers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        customerBody.innerHTML = rows.length
+            ? rows.map((c) => `
+                <tr class="border-b border-gray-100">
+                    <td class="px-3 py-2">${c.code || ''}</td>
+                    <td class="px-3 py-2">${c.name || ''}</td>
+                    <td class="px-3 py-2">${c.phone || '-'}</td>
+                    <td class="px-3 py-2 text-right">${Number(c.creditLimit || 0).toFixed(2)}</td>
+                    <td class="px-3 py-2 text-center">
+                        <button type="button" onclick="editCustomerMaster(${c.id})" class="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200">Edit</button>
+                    </td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="5" class="text-center p-4 text-gray-500">No customers yet</td></tr>';
+    }
+
+    if (supplierBody) {
+        const rows = [...suppliers].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        supplierBody.innerHTML = rows.length
+            ? rows.map((s) => `
+                <tr class="border-b border-gray-100">
+                    <td class="px-3 py-2">${s.code || ''}</td>
+                    <td class="px-3 py-2">${s.name || ''}</td>
+                    <td class="px-3 py-2">${s.phone || '-'}</td>
+                    <td class="px-3 py-2">${s.paymentTerms || 'Net 30'}</td>
+                    <td class="px-3 py-2 text-center">
+                        <button type="button" onclick="editSupplierMaster(${s.id})" class="px-2 py-1 text-xs bg-rose-100 text-rose-700 rounded-lg font-semibold hover:bg-rose-200">Edit</button>
+                    </td>
+                </tr>
+            `).join('')
+            : '<tr><td colspan="5" class="text-center p-4 text-gray-500">No suppliers yet</td></tr>';
+    }
+}
+
+async function editCustomerMaster(customerId) {
+    if (!requirePermission('settings:write', 'Only owner/manager can edit customers.')) return;
+
+    const customers = await DB.customers.getAll();
+    const row = customers.find((c) => Number(c.id) === Number(customerId));
+    if (!row) {
+        alert('Customer not found');
+        return;
+    }
+
+    const code = prompt('Customer number/code', row.code || '');
+    if (code === null) return;
+    const name = prompt('Customer name', row.name || '');
+    if (name === null) return;
+    const phone = prompt('Phone', row.phone || '');
+    if (phone === null) return;
+    const limitRaw = prompt('Credit limit', String(Number(row.creditLimit || 0)));
+    if (limitRaw === null) return;
+
+    const normalizedCode = String(code || '').trim();
+    const normalizedName = String(name || '').trim();
+    const creditLimit = Math.max(0, Number(limitRaw || 0));
+    if (!normalizedCode || !normalizedName || Number.isNaN(creditLimit)) {
+        alert('Please enter valid customer details');
+        return;
+    }
+
+    const existingByCode = await DB.customers.getByCode(normalizedCode);
+    if (existingByCode && Number(existingByCode.id) !== Number(row.id)) {
+        alert('Another customer already uses this code');
+        return;
+    }
+
+    await DB.customers.update(row.id, {
+        code: normalizedCode,
+        name: normalizedName,
+        phone: String(phone || '').trim(),
+        creditLimit,
+        active: true
+    });
+
+    await loadPaymentFormOptions();
+    await loadPartyMasterTables();
+    await loadCustomerPaymentStatus();
+    alert('Customer updated');
+}
+
+async function editSupplierMaster(supplierId) {
+    if (!requirePermission('settings:write', 'Only owner/manager can edit suppliers.')) return;
+
+    const suppliers = await DB.suppliers.getAll();
+    const row = suppliers.find((s) => Number(s.id) === Number(supplierId));
+    if (!row) {
+        alert('Supplier not found');
+        return;
+    }
+
+    const code = prompt('Supplier number/code', row.code || '');
+    if (code === null) return;
+    const name = prompt('Supplier name', row.name || '');
+    if (name === null) return;
+    const phone = prompt('Phone', row.phone || '');
+    if (phone === null) return;
+    const terms = prompt('Payment terms', row.paymentTerms || 'Net 30');
+    if (terms === null) return;
+
+    const normalizedCode = String(code || '').trim();
+    const normalizedName = String(name || '').trim();
+    if (!normalizedCode || !normalizedName) {
+        alert('Please enter valid supplier details');
+        return;
+    }
+
+    const existingByCode = await DB.suppliers.getByCode(normalizedCode);
+    if (existingByCode && Number(existingByCode.id) !== Number(row.id)) {
+        alert('Another supplier already uses this code');
+        return;
+    }
+
+    await DB.suppliers.update(row.id, {
+        code: normalizedCode,
+        name: normalizedName,
+        phone: String(phone || '').trim(),
+        paymentTerms: String(terms || 'Net 30').trim() || 'Net 30',
+        active: true
+    });
+
+    await loadPaymentFormOptions();
+    await loadPartyMasterTables();
+    await loadSupplierPaymentStatus();
+    alert('Supplier updated');
 }
 
 async function updateReportCurrentStockTotal() {
@@ -1037,6 +1065,9 @@ function showPage(pageName) {
     if (pageName === 'settings' && !requirePermission('settings:read', 'You do not have permission to open settings.')) {
         return;
     }
+    if (pageName === 'dayclose' && !requirePermission('dayclose:write', 'Only owner/manager can open day closing.')) {
+        return;
+    }
     if (pageName === 'parties' && !requirePermission('settings:read', 'You do not have permission to open parties.')) {
         return;
     }
@@ -1101,16 +1132,18 @@ function showPage(pageName) {
     } else if (pageName === 'settings') {
         loadShopSettings();
         loadCategories();
-        loadDayClosingRows();
         refreshLedgerSummaryCards();
+    } else if (pageName === 'dayclose') {
+        loadDayClosingRows();
+        updateDayClosePreview();
     } else if (pageName === 'parties') {
         loadPaymentFormOptions();
+        loadPartyMasterTables();
         loadLedgerTables();
         loadUnpaidPurchases();
         loadCustomerPaymentStatus();
         loadSupplierPaymentStatus();
         loadPartyMasterDefaults();
-        loadPartyMasterLists();
         refreshLedgerSummaryCards();
     }
 }
@@ -2320,8 +2353,6 @@ function toggleCreditSaleFields() {
         codeEl.required = enabled;
         if (!enabled) codeEl.value = '';
     }
-    const selectEl = document.getElementById('pos-credit-customer-select');
-    if (selectEl && !enabled) selectEl.value = '';
     if (nameEl) {
         nameEl.required = false;
         if (!enabled) nameEl.value = '';
@@ -2339,6 +2370,26 @@ function toggleCreditSaleFields() {
     }
 }
 
+async function handlePosCreditCustomerSelect() {
+    const selectedId = Number(document.getElementById('pos-credit-customer-select')?.value || 0);
+    const codeEl = document.getElementById('credit-customer-code');
+    const nameEl = document.getElementById('credit-customer-name');
+    const phoneEl = document.getElementById('credit-customer-phone');
+    if (!codeEl || !nameEl || !phoneEl) return;
+
+    if (!selectedId) {
+        return;
+    }
+
+    const customers = await DB.customers.getAll();
+    const customer = customers.find((c) => Number(c.id) === selectedId);
+    if (!customer) return;
+
+    codeEl.value = customer.code || '';
+    nameEl.value = customer.name || '';
+    phoneEl.value = customer.phone || '';
+}
+
 async function handleCreditCustomerCodeLookup() {
     const codeEl = document.getElementById('credit-customer-code');
     const nameEl = document.getElementById('credit-customer-name');
@@ -2349,8 +2400,10 @@ async function handleCreditCustomerCodeLookup() {
     if (!code) return;
     const customer = await DB.customers.getByCode(code);
     if (customer) {
-        const select = document.getElementById('pos-credit-customer-select');
-        if (select) select.value = String(customer.id);
+        const selectEl = document.getElementById('pos-credit-customer-select');
+        if (selectEl && selectEl.querySelector(`option[value="${customer.id}"]`)) {
+            selectEl.value = String(customer.id);
+        }
         nameEl.value = customer.name || '';
         phoneEl.value = customer.phone || '';
     }
@@ -3348,8 +3401,6 @@ function showReceiveStockModal() {
         supplierEl.value = '';
         const supplierCodeEl = document.getElementById('purchase-supplier-code');
         if (supplierCodeEl) supplierCodeEl.value = '';
-        const supplierSelectEl = document.getElementById('purchase-supplier-select');
-        if (supplierSelectEl) supplierSelectEl.value = '';
 
         const dateEl = document.getElementById('purchase-date');
         if (!dateEl) throw new Error('Date input missing');
@@ -3387,7 +3438,6 @@ function showReceiveStockModal() {
 
         // Load Categories for Autocomplete
         loadCategories();
-        loadPaymentFormOptions();
         
         const modal = document.getElementById('receive-stock-modal');
         if (!modal) throw new Error('Modal missing');
@@ -3410,13 +3460,33 @@ function closeReceiveStockModal() {
 async function handlePurchaseSupplierCodeLookup() {
     const code = document.getElementById('purchase-supplier-code')?.value?.trim() || '';
     const supplierNameEl = document.getElementById('purchase-supplier');
+    const supplierSelect = document.getElementById('purchase-supplier-select');
     if (!code || !supplierNameEl) return;
     const supplier = await DB.suppliers.getByCode(code);
     if (supplier) {
-        const select = document.getElementById('purchase-supplier-select');
-        if (select) select.value = String(supplier.id);
         supplierNameEl.value = supplier.name || '';
+        if (supplierSelect && supplierSelect.querySelector(`option[value="${supplier.id}"]`)) {
+            supplierSelect.value = String(supplier.id);
+        }
     }
+}
+
+async function handlePurchaseSupplierSelect() {
+    const supplierId = Number(document.getElementById('purchase-supplier-select')?.value || 0);
+    const supplierNameEl = document.getElementById('purchase-supplier');
+    const supplierCodeEl = document.getElementById('purchase-supplier-code');
+    if (!supplierNameEl || !supplierCodeEl) return;
+
+    if (!supplierId) {
+        return;
+    }
+
+    const suppliers = await DB.suppliers.getAll();
+    const supplier = suppliers.find((s) => Number(s.id) === supplierId);
+    if (!supplier) return;
+
+    supplierNameEl.value = supplier.name || '';
+    supplierCodeEl.value = supplier.code || '';
 }
 
 
@@ -4208,25 +4278,128 @@ function parseDateOnly(dateInput) {
 }
 
 async function calculateExpectedDrawerForDate(dateKey, openingCash = 0) {
-    const sales = await DB.sales.getAll();
-    const expenses = await DB.expenses.getAll();
-    const returns = await DB.returns.getAll();
+    const [sales, expenses, returns, customerEntries, supplierEntries] = await Promise.all([
+        DB.sales.getAll(),
+        DB.expenses.getAll(),
+        DB.returns.getAll(),
+        DB.customer_ledger.getAll(),
+        DB.supplier_ledger.getAll()
+    ]);
 
-    const inDay = (value) => {
-        const d = new Date(value);
-        if (isNaN(d.getTime())) return false;
-        return d.toISOString().split('T')[0] === dateKey;
-    };
+    const inDay = (value) => dateKeyOf(value) === dateKey;
 
-    const daySales = sales.filter(s => inDay(s.date)).reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
-    const dayExpenses = expenses.filter(e => inDay(e.date)).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const creditBySaleRef = new Map();
+    customerEntries
+        .filter((e) => e.type === 'sale' && inDay(e.date) && String(e.ref || '').startsWith('sale:'))
+        .forEach((e) => {
+            const ref = String(e.ref || '');
+            creditBySaleRef.set(ref, (creditBySaleRef.get(ref) || 0) + (Number(e.amount) || 0));
+        });
 
-    // Customer returns are cash outflows from drawer perspective.
+    const cashFromSales = sales
+        .filter((s) => inDay(s.date))
+        .reduce((sum, s) => {
+            const total = Number(s.totalAmount) || 0;
+            const due = creditBySaleRef.get(`sale:${s.id}`) || 0;
+            const received = Math.max(0, total - Math.max(0, due));
+            return sum + received;
+        }, 0);
+
+    const customerPaymentIn = customerEntries
+        .filter((e) => e.type === 'payment' && inDay(e.date))
+        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const supplierPaymentOut = supplierEntries
+        .filter((e) => e.type === 'payment' && inDay(e.date))
+        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const dayExpenses = expenses
+        .filter((e) => inDay(e.date))
+        .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
     const dayCustomerReturnAmount = returns
-        .filter(r => r.type === 'customer' && inDay(r.date))
+        .filter((r) => r.type === 'customer' && inDay(r.date))
         .reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
-    return Number(openingCash || 0) + daySales - dayExpenses - dayCustomerReturnAmount;
+    return Number(openingCash || 0) + cashFromSales + customerPaymentIn - supplierPaymentOut - dayExpenses - dayCustomerReturnAmount;
+}
+
+function getDayCloseStatus(variance) {
+    if (Math.abs(variance) < 0.01) return 'matched';
+    return variance < 0 ? 'shortage' : 'excess';
+}
+
+function applyDayCloseStatusPreview(status, variance) {
+    const varianceEl = document.getElementById('day-close-variance');
+    const badge = document.getElementById('day-close-status-badge');
+    if (varianceEl) {
+        varianceEl.textContent = variance.toFixed(2);
+        varianceEl.className = `text-xl font-bold ${status === 'shortage' ? 'text-red-600' : (status === 'excess' ? 'text-amber-600' : 'text-emerald-600')}`;
+    }
+    if (badge) {
+        if (status === 'shortage') {
+            badge.className = 'inline-flex items-center px-2 py-1 text-xs rounded-full bg-red-100 text-red-700 font-bold';
+            badge.textContent = 'Shortage';
+        } else if (status === 'excess') {
+            badge.className = 'inline-flex items-center px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-700 font-bold';
+            badge.textContent = 'Excess';
+        } else {
+            badge.className = 'inline-flex items-center px-2 py-1 text-xs rounded-full bg-emerald-100 text-emerald-700 font-bold';
+            badge.textContent = 'Matched';
+        }
+    }
+}
+
+async function updateDayClosePreview() {
+    const token = ++dayClosePreviewToken;
+    const dateKey = document.getElementById('day-close-date')?.value || '';
+    const openingCash = Number(document.getElementById('day-close-opening')?.value || 0);
+    const actualCash = Number(document.getElementById('day-close-actual')?.value || 0);
+    const expectedEl = document.getElementById('day-close-expected');
+
+    if (!dateKey || Number.isNaN(openingCash)) {
+        if (expectedEl) expectedEl.value = '0.00';
+        applyDayCloseStatusPreview('matched', 0);
+        return;
+    }
+
+    const expectedCash = await calculateExpectedDrawerForDate(dateKey, openingCash);
+    if (token !== dayClosePreviewToken) return;
+
+    if (expectedEl) expectedEl.value = expectedCash.toFixed(2);
+    const variance = (Number.isNaN(actualCash) ? 0 : actualCash) - expectedCash;
+    applyDayCloseStatusPreview(getDayCloseStatus(variance), variance);
+}
+
+function calculateDayCloseDenominations() {
+    let total = 0;
+    DAY_CLOSE_DENOMINATIONS.forEach((denom) => {
+        const qty = Math.max(0, Math.floor(Number(document.getElementById(`day-denom-${denom}`)?.value || 0)));
+        total += denom * qty;
+    });
+
+    const totalEl = document.getElementById('day-close-denom-total');
+    if (totalEl) totalEl.textContent = total.toFixed(2);
+
+    const actualEl = document.getElementById('day-close-actual');
+    if (actualEl) actualEl.value = total.toFixed(2);
+    updateDayClosePreview();
+}
+
+async function requestOwnerShortageApproval() {
+    if (currentUser?.role === 'owner') return currentUser.username;
+
+    const username = prompt('Shortage approval required. Enter owner username:');
+    if (!username) return null;
+    const password = prompt('Enter owner password for approval:');
+    if (!password) return null;
+
+    const ownerUser = await DB.users.verify(username.trim(), password);
+    if (!ownerUser || ownerUser.role !== 'owner') {
+        alert('Owner approval failed. Shortage close cancelled.');
+        return null;
+    }
+    return ownerUser.username;
 }
 
 async function closeDay(event) {
@@ -4255,6 +4428,32 @@ async function closeDay(event) {
 
     const expectedCash = await calculateExpectedDrawerForDate(dateKey, openingCash);
     const variance = actualCash - expectedCash;
+    const status = getDayCloseStatus(variance);
+    const isShortage = status === 'shortage';
+
+    let approvedBy = '';
+    let shortageExpenseId = null;
+
+    if (isShortage) {
+        if (!confirm(`Cash shortage detected: Rs. ${Math.abs(variance).toFixed(2)}. Do you want to close the day?`)) {
+            return;
+        }
+
+        const requireAdmin = !!document.getElementById('day-close-require-admin')?.checked;
+        if (requireAdmin) {
+            approvedBy = await requestOwnerShortageApproval();
+            if (!approvedBy) return;
+        } else {
+            approvedBy = currentUser?.username || '';
+        }
+
+        shortageExpenseId = await DB.expenses.add({
+            date: new Date(`${dateKey}T23:59:00`),
+            category: 'Cash Shortage',
+            description: `Day close shortage on ${dateKey}`,
+            amount: Math.abs(variance)
+        });
+    }
 
     await DB.day_closings.add({
         date: dateKey,
@@ -4262,12 +4461,16 @@ async function closeDay(event) {
         expectedCash,
         actualCash,
         variance,
+        status,
+        approvedBy,
+        shortageExpenseId,
         notes,
         closedBy: currentUser?.username || 'unknown'
     });
 
     alert('Day closed successfully.');
     document.getElementById('day-close-notes').value = '';
+    await updateDayClosePreview();
     await loadDayClosingRows();
 }
 
@@ -4279,13 +4482,19 @@ async function loadDayClosingRows() {
     rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
     if (rows.length === 0) {
-        body.innerHTML = '<tr><td colspan="7" class="px-2 py-2 text-gray-400 text-center">No day closing records yet.</td></tr>';
+        body.innerHTML = '<tr><td colspan="8" class="px-2 py-2 text-gray-400 text-center">No day closing records yet.</td></tr>';
         return;
     }
 
     body.innerHTML = rows.map(r => {
         const variance = Number(r.variance) || 0;
         const varianceClass = variance < 0 ? 'text-red-600' : (variance > 0 ? 'text-amber-600' : 'text-emerald-600');
+        const status = String(r.status || getDayCloseStatus(variance));
+        const statusBadge = status === 'shortage'
+            ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Shortage</span>'
+            : (status === 'excess'
+                ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Excess</span>'
+                : '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">Matched</span>');
         return `
             <tr>
                 <td class="px-2 py-2">${r.date || ''}</td>
@@ -4293,7 +4502,8 @@ async function loadDayClosingRows() {
                 <td class="px-2 py-2 text-right">${Number(r.expectedCash || 0).toFixed(2)}</td>
                 <td class="px-2 py-2 text-right">${Number(r.actualCash || 0).toFixed(2)}</td>
                 <td class="px-2 py-2 text-right ${varianceClass}">${variance.toFixed(2)}</td>
-                <td class="px-2 py-2">${r.closedBy || ''}</td>
+                <td class="px-2 py-2">${statusBadge}</td>
+                <td class="px-2 py-2">${r.approvedBy || '-'}</td>
                 <td class="px-2 py-2">${r.notes || ''}</td>
             </tr>
         `;
